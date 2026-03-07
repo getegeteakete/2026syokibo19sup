@@ -1,4 +1,5 @@
 import { prisma } from './db'
+import { startDbWarmup } from './db-warmup'
 import bcrypt from 'bcryptjs'
 
 // 同一プロセス内で1回だけ実行するフラグ
@@ -7,6 +8,7 @@ let setupDone = false
 export async function autoSetup() {
   if (setupDone) return
   setupDone = true
+  startDbWarmup() // Neonコールドスタート防止
   try {
     // DB接続確認
     await prisma.$queryRaw`SELECT 1`

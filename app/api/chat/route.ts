@@ -22,12 +22,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'メッセージを入力してください' }, { status: 400 })
     }
 
-    // Check token limit
-    const settings = await prisma.systemSettings.findFirst()
-    const userTokens = await prisma.tokenUsage.aggregate({
-      where: { userId: session.id },
-      _sum: { inputTokens: true, outputTokens: true },
-    })
+    // Build message history & image in parallel with DB queries
+    const history = historyStr ? JSON.parse(historyStr) : []
+
+    // 並列でDB取得 + 画像処理
+    const [settings, userTokens, hearing, imageResult] = await Promise.all([
+      prisma.systemSettings.findFirst(),
+      prisma.tokenUsage.aggregate({
+        where: { userId: session.id },
+        _sum: { inputTokens: true, outputTokens: true },
+      }),
+      prisma.hearingData.findUnique({ where: { userId: session.id } }),
+      imageFile ? (async () => {
+        const buf = await imageFile.arrayBuffer()
+        return { base64: Buffer.from(buf).toString('base64'), mediaType: imageFile.type }
+      })() : Promise.resolve(null),
+    ])
+
     const totalUsed = (userTokens._sum.inputTokens || 0) + (userTokens._sum.outputTokens || 0)
     const limit = settings?.perUserTokenLimit || 50000
 
@@ -37,21 +48,14 @@ export async function POST(request: NextRequest) {
       }, { status: 429 })
     }
 
-    // Build message history
-    const history = historyStr ? JSON.parse(historyStr) : []
-
     // Build current user message
     let userContent: Anthropic.MessageParam['content']
 
-    if (imageFile) {
-      const imageBuffer = await imageFile.arrayBuffer()
-      const base64 = Buffer.from(imageBuffer).toString('base64')
-      const mediaType = imageFile.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'
-
+    if (imageFile && imageResult) {
       userContent = [
         {
           type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: base64 },
+          source: { type: 'base64', media_type: imageResult.mediaType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: imageResult.base64 },
         },
         { type: 'text', text: message },
       ]
@@ -63,7 +67,6 @@ export async function POST(request: NextRequest) {
 
     // Add hearing data context if available (general も含めて全セクション)
     let contextAddition = ''
-    const hearing = await prisma.hearingData.findUnique({ where: { userId: session.id } })
     if (hearing) {
       const filledFields = Object.entries(hearing)
         .filter(([k, v]) => !['id','userId','createdAt','updatedAt','completionRate','applicationDraft'].includes(k) && v && String(v).trim())
@@ -88,39 +91,23 @@ export async function POST(request: NextRequest) {
     const inputTokens = response.usage.input_tokens
     const outputTokens = response.usage.output_tokens
 
-    // Save messages to DB
-    await prisma.chatMessage.create({
-      data: {
-        userId: session.id,
-        role: 'user',
-        content: message,
-        section,
-        tokens: inputTokens,
-      }
-    })
-
-    await prisma.chatMessage.create({
-      data: {
-        userId: session.id,
-        role: 'assistant',
-        content: assistantContent,
-        section,
-        tokens: outputTokens,
-      }
-    })
-
-    // Track token usage
-    await prisma.tokenUsage.create({
-      data: {
-        userId: session.id,
-        inputTokens,
-        outputTokens,
-      }
-    })
-
+    // DB書き込みを並列実行（レスポンスを待たずに投げる）
     // [REDIRECT_TO_HEARING] シグナル検知
     const hasRedirect = assistantContent.includes('[REDIRECT_TO_HEARING]')
     const cleanMessage = assistantContent.replace(/\[REDIRECT_TO_HEARING\]/g, '').trim()
+
+    // DB書き込みを並列実行（レスポンスを待たずに投げる）
+    Promise.all([
+      prisma.chatMessage.create({
+        data: { userId: session.id, role: 'user', content: message, section, tokens: inputTokens }
+      }),
+      prisma.chatMessage.create({
+        data: { userId: session.id, role: 'assistant', content: cleanMessage, section, tokens: outputTokens }
+      }),
+      prisma.tokenUsage.create({
+        data: { userId: session.id, inputTokens, outputTokens }
+      }),
+    ]).catch(e => console.error('DB write error:', e))
 
     return NextResponse.json({
       message: cleanMessage,
