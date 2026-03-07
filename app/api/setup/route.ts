@@ -181,76 +181,71 @@ export async function GET(request: NextRequest) {
   }
 
 
-  // ⑤ TokenUsageの列修正（旧スキーマからの移行）
+
+  // ===== 全列マイグレーション =====
   try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "companyName" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "contactName" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "email" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "phone" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "companyName" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "representativeName" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "address" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "phone" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "email" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "businessType" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "employeeCount" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "foundingYear" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "annualSales" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "currentBusiness" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "mainProducts" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "targetCustomers" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesChannels" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "strengths" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "challenges" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "subsidyPurpose" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "plannedActivities" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "expectedEffects" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "requestedAmount" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "ownContribution" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "implementationPlan" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "requirementCheck" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "applicationDraft" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "completionRate" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "tokens" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "inputTokens" INTEGER NOT NULL DEFAULT 0;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "outputTokens" INTEGER NOT NULL DEFAULT 0;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    // 旧列を削除（あれば）
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "totalTokens";`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "monthlyTokens";`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "tokenLimit";`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "lastResetAt";`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "updatedAt";`)
-    await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "TokenUsage_userId_key";`)
-    results.push('✅ TokenUsage列マイグレーション完了')
-  } catch (e) {
-    results.push(`⚠️ TokenUsage移行: ${String(e)}`)
-  }
-
-  // ⑥ ChatMessageの列修正
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "tokens" INTEGER NOT NULL DEFAULT 0;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" DROP COLUMN IF EXISTS "tokensUsed";`)
-    results.push('✅ ChatMessage列マイグレーション完了')
-  } catch (e) {
-    results.push(`⚠️ ChatMessage移行: ${String(e)}`)
-  }
-
-  // HearingData列マイグレーション
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "companyName" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "representativeName" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "address" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "phone" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "email" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "businessType" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "employeeCount" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "foundingYear" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "annualSales" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "currentBusiness" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "mainProducts" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "targetCustomers" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "salesChannels" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "strengths" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "challenges" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "subsidyPurpose" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "plannedActivities" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "expectedEffects" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "requestedAmount" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "ownContribution" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "implementationPlan" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "requirementCheck" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "applicationDraft" TEXT;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "completionRate" INTEGER NOT NULL DEFAULT 0;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    results.push('✅ HearingData列マイグレーション完了')
-  } catch (e) {
-    results.push(`⚠️ HearingData移行: ${String(e)}`)
-  }
-
-
-  // 全テーブルのタイムスタンプ列マイグレーション
-  try {
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "stage" TEXT NOT NULL DEFAULT 'requirement_check';`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "requirementCheckDone" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "amountCheckDone" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "hearingDone" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "shokoukaiFiled" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "shokoukaiFiingDate" TIMESTAMP(3);`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "electronicFiled" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "electronicFilingDate" TIMESTAMP(3);`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "adopted" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "adoptedDate" TIMESTAMP(3);`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "reportFiled" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "reportFiledDate" TIMESTAMP(3);`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "notes" TEXT;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationLog" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
-    console.log('[setup] timestamp migration done')
-  } catch (e) { console.error('[setup] timestamp migration:', e) }
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "email" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "phone" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "emailEnabled" BOOLEAN NOT NULL DEFAULT true;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "smsEnabled" BOOLEAN NOT NULL DEFAULT false;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "deadlineAlerts" BOOLEAN NOT NULL DEFAULT true;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "weeklyReport" BOOLEAN NOT NULL DEFAULT true;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationSettings" ADD COLUMN IF NOT EXISTS "documentRemind" BOOLEAN NOT NULL DEFAULT true;`)
+  } catch(e) { console.error('[migration]', e) }
+
   // ③ adminアカウント作成
   try {
     const adminPassword = await bcrypt.hash('admin1234', 10)
