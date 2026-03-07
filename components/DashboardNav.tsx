@@ -36,12 +36,159 @@ export default function DashboardNav({ session }: { session: SessionUser }) {
   const isActive = (item: typeof NAV_ITEMS[0]) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
 
-  const SidebarContent = () => (
-    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:'#1b3a28', fontFamily:"'Noto Sans JP',sans-serif" }}>
-      {/* Logo */}
-      <div style={{ padding:'20px 16px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-          <div style={{ width:'32px', height:'32px', background:'#2d6a4f', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(0,0,0,0.25)', flexShrink:0 }}>
+  return (
+    <>
+      <style>{`
+        .dnav {
+          display: flex;
+          flex-direction: column;
+          width: 210px;
+          min-width: 210px;
+          height: 100%;
+          background: #1b3a28;
+          font-family: 'Noto Sans JP', sans-serif;
+          flex-shrink: 0;
+        }
+        .dnav-logo {
+          padding: 20px 16px 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .dnav-logo-mark {
+          width: 32px;
+          height: 32px;
+          background: #2d6a4f;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          flex-shrink: 0;
+        }
+        .dnav-user {
+          margin: 10px 12px 4px;
+          background: rgba(45,106,79,0.4);
+          border: 1px solid rgba(116,198,157,0.15);
+          border-radius: 6px;
+          padding: 7px 10px;
+        }
+        .dnav-section {
+          font-size: 10px;
+          font-weight: 600;
+          color: rgba(255,255,255,0.25);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          padding: 12px 16px 6px;
+        }
+        .dnav-nav {
+          flex: 1;
+          padding: 2px 8px;
+          overflow-y: auto;
+        }
+        .dnav-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 9px 12px;
+          border-radius: 7px;
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.5);
+          text-decoration: none;
+          margin-bottom: 2px;
+          transition: all 0.15s;
+          cursor: pointer;
+        }
+        .dnav-link:hover {
+          background: rgba(255,255,255,0.07);
+          color: rgba(255,255,255,0.85);
+        }
+        .dnav-link.active {
+          background: #2d6a4f;
+          color: #d8f3e8;
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .dnav-link .nav-icon { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+        .dnav-link:hover .nav-icon { color: rgba(255,255,255,0.6); }
+        .dnav-link.active .nav-icon { color: #74c69d; }
+        .dnav-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 4px 12px; }
+        .dnav-logout {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 9px 12px;
+          margin: 4px 0;
+          border-radius: 7px;
+          font-size: 13px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.3);
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: 'Noto Sans JP', sans-serif;
+          transition: all 0.15s;
+        }
+        .dnav-logout:hover { background: rgba(255,80,80,0.12); color: #ff9999; }
+        .dnav-mobile-header {
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          z-index: 50;
+          height: 52px;
+          background: #1b3a28;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .dnav-hamburger {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .dnav-hamburger span {
+          display: block;
+          width: 18px;
+          height: 2px;
+          background: rgba(255,255,255,0.6);
+          border-radius: 2px;
+        }
+        .dnav-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 40;
+          display: flex;
+        }
+        .dnav-drawer {
+          width: 210px;
+          height: 100%;
+          margin-top: 52px;
+        }
+        .dnav-backdrop {
+          flex: 1;
+          background: rgba(0,0,0,0.5);
+        }
+        @media (min-width: 768px) {
+          .dnav-mobile-header { display: none; }
+          .dnav-mobile-spacer { display: none; }
+        }
+        @media (max-width: 767px) {
+          .dnav-desktop { display: none; }
+        }
+      `}</style>
+
+      {/* Desktop sidebar */}
+      <aside className="dnav-desktop dnav">
+        <div className="dnav-logo">
+          <div className="dnav-logo-mark">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
@@ -51,90 +198,97 @@ export default function DashboardNav({ session }: { session: SessionUser }) {
             <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)', marginTop:'1px' }}>第19回 一般型</div>
           </div>
         </div>
-      </div>
 
-      {/* User badge */}
-      <div style={{ margin:'10px 12px 4px', background:'rgba(45,106,79,0.4)', border:'1px solid rgba(116,198,157,0.15)', borderRadius:'6px', padding:'7px 10px' }}>
-        <div style={{ fontSize:'11px', fontWeight:600, color:'#74c69d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-          {session.companyName || session.username}
+        <div className="dnav-user">
+          <div style={{ fontSize:'11px', fontWeight:600, color:'#74c69d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            {session.companyName || session.username}
+          </div>
+          <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)', marginTop:'1px' }}>顧客ポータル</div>
         </div>
-        <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)', marginTop:'1px' }}>顧客ポータル</div>
-      </div>
 
-      {/* Section label */}
-      <div style={{ fontSize:'10px', fontWeight:600, color:'rgba(255,255,255,0.25)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'12px 16px 6px' }}>メニュー</div>
+        <div className="dnav-section">メニュー</div>
 
-      {/* Nav */}
-      <nav style={{ flex:1, padding:'2px 8px', overflowY:'auto' }}>
-        {NAV_ITEMS.map(item => {
-          const active = isActive(item)
-          return (
-            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
-              display:'flex', alignItems:'center', gap:'10px',
-              padding:'9px 12px', borderRadius:'7px',
-              fontSize:'13px', fontWeight: active ? 600 : 500,
-              color: active ? '#d8f3e8' : 'rgba(255,255,255,0.5)',
-              textDecoration:'none', marginBottom:'2px',
-              background: active ? '#2d6a4f' : 'transparent',
-              boxShadow: active ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
-              transition:'all 0.15s',
-            }}>
-              <span style={{ color: active ? '#74c69d' : 'rgba(255,255,255,0.3)', flexShrink:0 }}>{item.icon}</span>
+        <nav className="dnav-nav">
+          {NAV_ITEMS.map(item => (
+            <Link key={item.href} href={item.href} className={`dnav-link${isActive(item) ? ' active' : ''}`}>
+              <span className="nav-icon">{item.icon}</span>
               {item.label}
             </Link>
-          )
-        })}
-      </nav>
+          ))}
+        </nav>
 
-      <div style={{ height:'1px', background:'rgba(255,255,255,0.07)', margin:'0 12px' }}/>
-
-      {/* Logout */}
-      <div style={{ padding:'8px' }}>
-        <button onClick={handleLogout} style={{
-          display:'flex', alignItems:'center', gap:'10px', width:'100%',
-          padding:'9px 12px', borderRadius:'7px', fontSize:'13px', fontWeight:500,
-          color:'rgba(255,255,255,0.3)', background:'none', border:'none',
-          cursor:'pointer', fontFamily:"'Noto Sans JP',sans-serif",
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background='rgba(255,80,80,0.1)'; e.currentTarget.style.color='#ff9999' }}
-        onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(255,255,255,0.3)' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          ログアウト
-        </button>
-      </div>
-    </div>
-  )
-
-  return (
-    <>
-      {/* Desktop */}
-      <aside style={{ width:'210px', minWidth:'210px', height:'100%', flexShrink:0, display:'flex' }} className="hidden md:flex">
-        <SidebarContent />
+        <div className="dnav-divider" />
+        <div style={{ padding:'4px 8px 8px' }}>
+          <button className="dnav-logout" onClick={handleLogout}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            ログアウト
+          </button>
+        </div>
       </aside>
 
-      {/* Mobile header */}
-      <div className="md:hidden">
-        <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', height:'52px', background:'#1b3a28', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+      {/* Mobile */}
+      <div>
+        <div className="dnav-mobile-header">
           <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-            <div style={{ width:'26px', height:'26px', background:'#2d6a4f', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div className="dnav-logo-mark" style={{ width:'26px', height:'26px', borderRadius:'6px' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
             </div>
             <span style={{ fontSize:'13px', fontWeight:700, color:'#eaf6ee' }}>補助金サポート</span>
           </div>
-          <button onClick={() => setMobileOpen(!mobileOpen)} style={{ background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', flexDirection:'column', gap:'4px' }}>
-            {[0,1,2].map(i => <span key={i} style={{ display:'block', width:'18px', height:'2px', background:'rgba(255,255,255,0.6)', borderRadius:'2px' }}/>)}
+          <button className="dnav-hamburger" onClick={() => setMobileOpen(!mobileOpen)}>
+            <span/><span/><span/>
           </button>
         </div>
+        <div className="dnav-mobile-spacer" style={{ height:'52px' }} />
 
         {mobileOpen && (
-          <div style={{ position:'fixed', inset:0, zIndex:30, display:'flex' }}>
-            <div style={{ width:'220px', height:'100%', marginTop:'52px' }}><SidebarContent /></div>
-            <div style={{ flex:1, background:'rgba(0,0,0,0.5)' }} onClick={() => setMobileOpen(false)}/>
+          <div className="dnav-overlay">
+            <div className="dnav-drawer">
+              <div className="dnav" style={{ width:'210px' }}>
+                <div className="dnav-logo">
+                  <div className="dnav-logo-mark">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:'12px', fontWeight:700, color:'#eaf6ee' }}>補助金サポート</div>
+                    <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)' }}>第19回 一般型</div>
+                  </div>
+                </div>
+                <div className="dnav-user">
+                  <div style={{ fontSize:'11px', fontWeight:600, color:'#74c69d' }}>{session.companyName || session.username}</div>
+                  <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)' }}>顧客ポータル</div>
+                </div>
+                <div className="dnav-section">メニュー</div>
+                <nav className="dnav-nav">
+                  {NAV_ITEMS.map(item => (
+                    <Link key={item.href} href={item.href}
+                      className={`dnav-link${isActive(item) ? ' active' : ''}`}
+                      onClick={() => setMobileOpen(false)}>
+                      <span className="nav-icon">{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+                <div className="dnav-divider" />
+                <div style={{ padding:'4px 8px 8px' }}>
+                  <button className="dnav-logout" onClick={handleLogout}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    ログアウト
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="dnav-backdrop" onClick={() => setMobileOpen(false)} />
           </div>
         )}
-        <div style={{ height:'52px' }}/>
       </div>
     </>
   )
