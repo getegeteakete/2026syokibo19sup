@@ -13,6 +13,7 @@ interface Props {
     } | null
     totalTokens: number
     chatMessages: Array<{ id: string; role: string; content: string; section: string; createdAt: Date }>
+    aiGenerateEnabled: boolean
   }
   stages: Array<{ id: string; label: string; icon: string }>
   stageIndex: number
@@ -51,6 +52,20 @@ export default function AdminCustomerClient({ user, stages, stageIndex }: Props)
   const [status, setStatus] = useState<Record<string, unknown>>(user.applicationStatus || {})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [aiEnabled, setAiEnabled] = useState(user.aiGenerateEnabled)
+  const [aiToggling, setAiToggling] = useState(false)
+
+  const toggleAiPermission = async (val: boolean) => {
+    setAiToggling(true)
+    try {
+      const res = await fetch('/api/admin/ai-permission', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, enabled: val }),
+      })
+      if (res.ok) setAiEnabled(val)
+    } catch(e) { console.error(e) } finally { setAiToggling(false) }
+  }
   const hearing = user.hearingData as Record<string, string> | null
   const rate = (hearing as any)?.completionRate || 0
 
@@ -92,6 +107,38 @@ export default function AdminCustomerClient({ user, stages, stageIndex }: Props)
             <p style={{ fontSize: '24px', fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* AI生成許可トグル */}
+      <div style={{ background: '#fff', borderRadius: '10px', border: `2px solid ${aiEnabled ? '#52b788' : '#e2ece5'}`, padding: '14px 20px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color .2s' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={aiEnabled ? '#2d6a4f' : '#9aab9f'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/>
+            </svg>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1b3a28' }}>AI書類生成ボタン</span>
+            <span style={{ fontSize: '11px', padding: '2px 9px', borderRadius: '20px', fontWeight: 600, background: aiEnabled ? '#e8f5ee' : '#f0f0f0', color: aiEnabled ? '#2d6a4f' : '#9aab9f' }}>
+              {aiEnabled ? '許可中' : '非許可'}
+            </span>
+          </div>
+          <p style={{ fontSize: '11px', color: '#9aab9f', marginTop: '4px', marginLeft: '23px' }}>
+            {aiEnabled ? 'この顧客の申請書類ページにAI生成ボタンが表示されます' : 'ヒアリング完了後に許可してください。現在は非表示です'}
+          </p>
+        </div>
+        <button
+          onClick={() => toggleAiPermission(!aiEnabled)}
+          disabled={aiToggling}
+          style={{
+            width: '52px', height: '28px', borderRadius: '14px', border: 'none', cursor: aiToggling ? 'default' : 'pointer',
+            background: aiEnabled ? '#2d6a4f' : '#d5e8db', position: 'relative', transition: 'background .2s', flexShrink: 0,
+          }}>
+          <span style={{
+            position: 'absolute', top: '3px',
+            left: aiEnabled ? '27px' : '3px',
+            width: '22px', height: '22px', borderRadius: '50%', background: '#fff',
+            transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+          }}/>
+        </button>
       </div>
 
       {/* Tabs */}

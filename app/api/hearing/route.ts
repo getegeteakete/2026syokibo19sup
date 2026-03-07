@@ -13,8 +13,11 @@ export async function GET(request: NextRequest) {
     const userId = session.role === 'admin'
       ? new URL(request.url).searchParams.get('userId') || session.id
       : session.id
-    const data = await prisma.hearingData.findUnique({ where: { userId } })
-    return NextResponse.json({ data })
+    const [data, user] = await Promise.all([
+      prisma.hearingData.findUnique({ where: { userId } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { aiGenerateEnabled: true } }),
+    ])
+    return NextResponse.json({ data, aiGenerateEnabled: user?.aiGenerateEnabled ?? false })
   } catch (e) {
     console.error('GET /api/hearing error:', e)
     return err(`ヒアリングデータ取得エラー: ${String(e)}`)

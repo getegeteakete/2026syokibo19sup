@@ -26,9 +26,11 @@ export default function DocumentsPage() {
   const [form3Doc, setForm3Doc] = useState('')
   const [completionRate, setCompletionRate] = useState(0)
   const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({})
+  const [aiGenerateEnabled, setAiGenerateEnabled] = useState(false)
 
   useEffect(() => {
-    fetch('/api/hearing').then(r => r.json()).then(({ data }) => {
+    fetch('/api/hearing').then(r => r.json()).then(({ data, aiGenerateEnabled }) => {
+      setAiGenerateEnabled(aiGenerateEnabled ?? false)
       if (data) {
         setCompletionRate(data.completionRate || 0)
         setIndustry(data.businessType || '')
@@ -79,7 +81,7 @@ export default function DocumentsPage() {
     btn: (color='#2d6a4f', disabled=false) => ({ display:'inline-flex', alignItems:'center', gap:'7px', padding:'9px 20px', background:disabled?'#d5e8db':color, color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:600, cursor:disabled?'default':'pointer', fontFamily:"'Noto Sans JP',sans-serif", transition:'background .15s' }),
   }
 
-  const FormCard = ({ type, title, desc, status, doc }: { type:'form2'|'form3', title:string, desc:string, status:GenStatus, doc:string }) => (
+  const FormCard = ({ type, title, desc, status, doc, aiEnabled }: { type:'form2'|'form3', title:string, desc:string, status:GenStatus, doc:string, aiEnabled:boolean }) => (
     <div style={C.card}>
       <div style={C.cardHeader}>
         <div>
@@ -93,28 +95,37 @@ export default function DocumentsPage() {
               コピー
             </button>
           )}
-          <button
-            onClick={() => generate(type)}
-            disabled={status === 'loading' || completionRate < 30}
-            style={C.btn(status==='done'?'#52b788':'#2d6a4f', status==='loading' || completionRate < 30)}
-          >
-            {status === 'loading' ? (
-              <>
-                <div style={{ width:'12px', height:'12px', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', animation:'spin .7s linear infinite' }}/>
-                生成中...
-              </>
-            ) : status === 'done' ? (
-              <>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                再生成
-              </>
-            ) : (
-              <>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
-                AIで生成
-              </>
-            )}
-          </button>
+          {aiEnabled ? (
+            <button
+              onClick={() => generate(type)}
+              disabled={status === 'loading' || completionRate < 30}
+              style={C.btn(status==='done'?'#52b788':'#2d6a4f', status==='loading' || completionRate < 30)}
+            >
+              {status === 'loading' ? (
+                <>
+                  <div style={{ width:'12px', height:'12px', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', animation:'spin .7s linear infinite' }}/>
+                  生成中...
+                </>
+              ) : status === 'done' ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  再生成
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+                  AIで生成
+                </>
+              )}
+            </button>
+          ) : (
+            <div style={{ display:'flex', alignItems:'center', gap:'6px', padding:'8px 14px', background:'#f4f7f4', border:'1px solid #e2ece5', borderRadius:'8px', fontSize:'12px', color:'#9aab9f' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              担当者が許可後に利用可能
+            </div>
+          )}
         </div>
       </div>
 
@@ -198,6 +209,7 @@ export default function DocumentsPage() {
             desc="企業概要・市場動向・強み弱み・経営方針（全4章・約4000文字）"
             status={form2Status}
             doc={form2Doc}
+            aiEnabled={aiGenerateEnabled}
           />
 
           <FormCard
@@ -206,6 +218,7 @@ export default function DocumentsPage() {
             desc="補助事業名・取組内容・業務効率化・効果試算（経費表・収支予測表付き）"
             status={form3Status}
             doc={form3Doc}
+            aiEnabled={aiGenerateEnabled}
           />
 
           <div style={{ background:'#f6fbf7', border:'1px solid #e2ece5', borderRadius:'9px', padding:'14px 18px', fontSize:'12px', color:'#5a7060', lineHeight:1.8 }}>

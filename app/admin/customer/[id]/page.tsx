@@ -103,7 +103,7 @@ export default async function AdminCustomerPage({ params }: { params: Promise<{ 
       </div>
 
       <AdminCustomerClient
-        user={{ ...user, totalTokens }}
+        user={{ ...user, totalTokens, aiGenerateEnabled: user.aiGenerateEnabled ?? false }}
         stages={STAGES}
         stageIndex={stageIndex}
       />

@@ -16,6 +16,7 @@ model User {
   contactName   String?
   email         String?
   phone         String?
+  aiGenerateEnabled Boolean  @default(false)  // 管理者が許可した場合のみAI生成ボタンを表示
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
