@@ -118,3 +118,25 @@ model SystemSettings {
   globalTokenLimit Int    @default(100000)
   perUserTokenLimit Int   @default(10000)
 }
+
+model NotificationLog {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  subject     String
+  body        String
+  status      String
+  sentAt      DateTime  @default(now())
+}
+
+model NotificationSettings {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  email           String?
+  phone           String?
+  emailEnabled    Boolean @default(true)
+  smsEnabled      Boolean @default(false)
+  deadlineAlerts  Boolean @default(true)
+  weeklyReport    Boolean @default(true)
+  documentRemind  Boolean @default(true)
+}

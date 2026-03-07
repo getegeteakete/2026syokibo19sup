@@ -94,7 +94,7 @@ export default async function DashboardPage() {
           { href: '/dashboard/hearing', icon: '📝', label: `ヒアリング ${completionRate}%`, desc: '事業情報を入力', color: 'bg-green-50 border-green-100 hover:bg-green-100' },
           { href: '/dashboard/documents', icon: '📂', label: '必要書類', desc: 'チェックリスト', color: 'bg-amber-50 border-amber-100 hover:bg-amber-100' },
           { href: '/dashboard/chat?section=document', icon: '✏️', label: '申請書作成', desc: 'AIで下書き作成', color: 'bg-purple-50 border-purple-100 hover:bg-purple-100' },
-          { href: '/dashboard/chat?section=guide', icon: '🖥️', label: '電子申請ガイド', desc: '画面操作を案内', color: 'bg-sky-50 border-sky-100 hover:bg-sky-100' },
+          { href: '/dashboard/simulation', icon: '🖥️', label: '申請シミュレーション', desc: '電子申請を練習', color: 'bg-sky-50 border-sky-100 hover:bg-sky-100' },
           { href: '/dashboard/reports', icon: '📊', label: '実績報告', desc: '採択後の手続き', color: 'bg-rose-50 border-rose-100 hover:bg-rose-100' },
         ].map(item => (
           <Link

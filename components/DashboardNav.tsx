@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { href: '/dashboard/chat', label: 'AIチャット', icon: '💬' },
   { href: '/dashboard/hearing', label: 'ヒアリング', icon: '📝' },
   { href: '/dashboard/documents', label: '必要書類', icon: '📂' },
-  { href: '/dashboard/schedule', label: 'スケジュール', icon: '📅' },
+  { href: '/dashboard/smart-schedule', label: 'スケジュール', icon: '📅' },
+  { href: '/dashboard/simulation', label: '申請シミュレーション', icon: '🖥️' },
   { href: '/dashboard/reports', label: '実績報告', icon: '📊' },
   { href: '/dashboard/data', label: 'データ確認', icon: '🔍' },
 ]

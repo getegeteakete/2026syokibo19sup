@@ -78,3 +78,33 @@ body {
   color: #64748b;
   margin: 0.5rem 0;
 }
+
+/* Form helpers */
+.form-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #93c5fd;
+  background: white;
+}
+.form-select {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #93c5fd;
+  background: white;
+}
