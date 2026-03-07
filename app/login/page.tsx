@@ -207,7 +207,7 @@ export default function LoginPage() {
           padding: 11px 6px;
           text-align: center;
         }
-        .l-foot-icon { font-size: 17px; margin-bottom: 5px; }
+        .l-foot-svg { width:22px; height:22px; color:#b07040; margin:0 auto 6px; display:block; }
         .l-foot-lbl { font-size: 10.5px; color: #9a8778; font-weight: 500; }
       `}</style>
 
@@ -266,16 +266,28 @@ export default function LoginPage() {
           </div>
 
           <div className="l-footer">
-            {[
-              { icon: '🔐', label: 'セキュア認証' },
-              { icon: '🤖', label: 'AI申請支援' },
-              { icon: '📱', label: 'スマホ対応' },
-            ].map(item => (
-              <div key={item.label} className="l-foot-item">
-                <div className="l-foot-icon">{item.icon}</div>
-                <div className="l-foot-lbl">{item.label}</div>
-              </div>
-            ))}
+            <div className="l-foot-item">
+              <svg className="l-foot-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2"/>
+                <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                <circle cx="12" cy="16" r="1.2"/>
+              </svg>
+              <div className="l-foot-lbl">セキュア認証</div>
+            </div>
+            <div className="l-foot-item">
+              <svg className="l-foot-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2C6.5 2 2 6 2 11c0 2.4 1 4.6 2.6 6.2L4 21l3.9-1.3C9.2 20.5 10.6 21 12 21c5.5 0 10-4 10-9s-4.5-10-10-10z"/>
+                <path d="M8 11h.01M12 11h.01M16 11h.01"/>
+              </svg>
+              <div className="l-foot-lbl">AI申請支援</div>
+            </div>
+            <div className="l-foot-item">
+              <svg className="l-foot-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="7" y="2" width="10" height="20" rx="2"/>
+                <path d="M11 18h2"/>
+              </svg>
+              <div className="l-foot-lbl">スマホ対応</div>
+            </div>
           </div>
 
         </div>
