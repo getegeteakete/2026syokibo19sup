@@ -151,3 +151,12 @@ body { font-family: var(--font-noto); background: var(--bg); margin: 0; }
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(27,58,40,0.1);
 }
+
+/* ============================================
+   モバイル：固定ヘッダー(52px)分のスペース確保
+   ============================================ */
+@media (max-width: 767px) {
+  #main-content {
+    padding-top: 52px !important;
+  }
+}
