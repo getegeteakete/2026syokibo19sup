@@ -39,6 +39,20 @@ export default async function AdminPage() {
     totalTokens = users.reduce((sum, u) => sum + u.tokenUsage.reduce((s: number, t: any) => s + t.inputTokens + t.outputTokens, 0), 0)
   } catch {}
 
+  // コスト計算 (Claude Sonnet: 入力 $3/MTok, 出力 $15/MTok)
+  let totalInputTokens = 0
+  let totalOutputTokens = 0
+  try {
+    const agg = await prisma.tokenUsage.aggregate({
+      _sum: { inputTokens: true, outputTokens: true },
+    })
+    totalInputTokens = agg._sum.inputTokens || 0
+    totalOutputTokens = agg._sum.outputTokens || 0
+  } catch {}
+  const USD_PER_JPY = 160
+  const estimatedCostUsd = (totalInputTokens / 1_000_000) * 3 + (totalOutputTokens / 1_000_000) * 15
+  const estimatedCostJpy = Math.round(estimatedCostUsd * USD_PER_JPY)
+
   const stats = {
     total: users.length,
     hearing: users.filter(u => (u.hearingData?.completionRate || 0) > 50).length,
@@ -88,14 +102,41 @@ export default async function AdminPage() {
           <Link href="/admin/tokens" style={{fontSize:'12px', color:'#2d6a4f', fontWeight:600, textDecoration:'none'}}>詳細を見る →</Link>
         </div>
         <div style={{padding:'16px 20px'}}>
+          {/* トークン数 + プログレスバー */}
           <div style={{display:'flex', alignItems:'flex-end', gap:'6px', marginBottom:'8px'}}>
             <span style={{fontSize:'28px', fontWeight:800, color:'#1b3a28', lineHeight:1}}>{totalTokens.toLocaleString()}</span>
             <span style={{fontSize:'12px', color:'#6b7c70', paddingBottom:'3px'}}>/ {(settings?.globalTokenLimit || 1000000).toLocaleString()} トークン</span>
           </div>
-          <div style={{height:'6px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden'}}>
+          <div style={{height:'6px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden', marginBottom:'5px'}}>
             <div style={{height:'100%', borderRadius:'10px', background:'linear-gradient(90deg,#2d6a4f,#52b788)', width:`${Math.min((totalTokens/(settings?.globalTokenLimit||1000000))*100,100)}%`, transition:'width 0.6s'}}/>
           </div>
-          <p style={{fontSize:'11px', color:'#9aab9f', marginTop:'5px'}}>グローバル上限の {((totalTokens/(settings?.globalTokenLimit||1000000))*100).toFixed(1)}% 使用中</p>
+          <p style={{fontSize:'11px', color:'#9aab9f', marginBottom:'16px'}}>グローバル上限の {((totalTokens/(settings?.globalTokenLimit||1000000))*100).toFixed(1)}% 使用中</p>
+
+          {/* コスト表示 */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px'}}>
+            <div style={{background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', padding:'12px 14px'}}>
+              <p style={{fontSize:'10px', color:'#16a34a', fontWeight:700, marginBottom:'5px', display:'flex', alignItems:'center', gap:'4px'}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                推定費用（累計）
+              </p>
+              <p style={{fontSize:'22px', fontWeight:800, color:'#15803d', lineHeight:1, marginBottom:'2px'}}>${estimatedCostUsd.toFixed(4)}</p>
+              <p style={{fontSize:'11px', color:'#4ade80', fontWeight:600}}>≈ {estimatedCostJpy.toLocaleString()} 円</p>
+              <p style={{fontSize:'9px', color:'#86efac', marginTop:'3px'}}>1ドル={USD_PER_JPY}円換算</p>
+            </div>
+            <div style={{background:'#f8fafc', border:'1px solid #e2ece5', borderRadius:'10px', padding:'12px 14px'}}>
+              <p style={{fontSize:'10px', color:'#7a8f80', fontWeight:700, marginBottom:'5px'}}>入力トークン</p>
+              <p style={{fontSize:'16px', fontWeight:800, color:'#1b3a28', lineHeight:1, marginBottom:'2px'}}>{totalInputTokens.toLocaleString()}</p>
+              <p style={{fontSize:'10px', color:'#9aab9f'}}>$3 / 1M tok</p>
+              <p style={{fontSize:'10px', color:'#b0bfb5', marginTop:'3px'}}>${((totalInputTokens/1_000_000)*3).toFixed(4)}</p>
+            </div>
+            <div style={{background:'#f8fafc', border:'1px solid #e2ece5', borderRadius:'10px', padding:'12px 14px'}}>
+              <p style={{fontSize:'10px', color:'#7a8f80', fontWeight:700, marginBottom:'5px'}}>出力トークン</p>
+              <p style={{fontSize:'16px', fontWeight:800, color:'#1b3a28', lineHeight:1, marginBottom:'2px'}}>{totalOutputTokens.toLocaleString()}</p>
+              <p style={{fontSize:'10px', color:'#9aab9f'}}>$15 / 1M tok</p>
+              <p style={{fontSize:'10px', color:'#b0bfb5', marginTop:'3px'}}>${((totalOutputTokens/1_000_000)*15).toFixed(4)}</p>
+            </div>
+          </div>
+          <p style={{fontSize:'10px', color:'#c5d4c8', marginTop:'8px'}}>※ Claude Sonnet 料金レート（入力$3・出力$15 per 1M tokens）で算出した概算値です</p>
         </div>
       </div>
 
