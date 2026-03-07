@@ -34,92 +34,252 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-950 via-primary-800 to-primary-600 flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary-500/5 rounded-full" />
-      </div>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+        .login-root {
+          min-height: 100vh;
+          background-color: #faf7f4;
+          background-image:
+            radial-gradient(ellipse 80% 60% at 15% 10%, rgba(251,176,99,0.13) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 50% at 85% 88%, rgba(210,195,180,0.18) 0%, transparent 55%),
+            url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23c4a882' fill-opacity='0.045'%3E%3Cpath d='M10 10h4v4h-4zm14 0h4v4h-4zm14 0h4v4h-4zm-28 14h4v4h-4zm14 0h4v4h-4zm14 0h4v4h-4zm-28 14h4v4h-4zm14 0h4v4h-4zm14 0h4v4h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          font-family: 'Noto Sans JP', sans-serif;
+        }
+        .login-wrap {
+          width: 100%;
+          max-width: 400px;
+          animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .l-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          background: rgba(224,125,42,0.1);
+          border: 1px solid rgba(219,139,50,0.22);
+          border-radius: 999px;
+          padding: 5px 14px;
+          margin-bottom: 16px;
+        }
+        .l-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #d97020;
+          animation: blink 2.2s ease-in-out infinite;
+        }
+        @keyframes blink {
+          0%,100% { opacity:1; } 50% { opacity:0.35; }
+        }
+        .l-badge-txt {
+          font-size: 11.5px;
+          font-weight: 500;
+          color: #b85e18;
+          letter-spacing: 0.01em;
+        }
+        .l-title {
+          font-size: 28px;
+          font-weight: 700;
+          color: #231e1a;
+          letter-spacing: -0.025em;
+          line-height: 1.18;
+        }
+        .l-sub {
+          font-size: 12.5px;
+          color: #9a8778;
+          margin-top: 7px;
+          font-weight: 400;
+          line-height: 1.5;
+        }
+        .l-card {
+          background: #fff;
+          border: 1px solid rgba(196,168,130,0.22);
+          border-radius: 20px;
+          padding: 34px 30px 28px;
+          margin-top: 28px;
+          box-shadow:
+            0 2px 4px rgba(80,50,20,0.05),
+            0 12px 40px rgba(160,110,60,0.09);
+        }
+        .l-card-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #3a302a;
+          margin-bottom: 22px;
+          padding-bottom: 14px;
+          border-bottom: 1px solid #f2e9e1;
+          letter-spacing: 0.01em;
+        }
+        .l-field { margin-bottom: 16px; }
+        .l-label {
+          display: block;
+          font-size: 11px;
+          font-weight: 600;
+          color: #8a7868;
+          margin-bottom: 6px;
+          letter-spacing: 0.07em;
+          text-transform: uppercase;
+        }
+        .l-input {
+          width: 100%;
+          background: #faf7f4;
+          border: 1.5px solid #ecddd2;
+          border-radius: 11px;
+          padding: 11px 15px;
+          font-size: 14px;
+          font-family: 'Noto Sans JP', sans-serif;
+          color: #231e1a;
+          outline: none;
+          transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+        }
+        .l-input::placeholder { color: #c8b4a4; }
+        .l-input:focus {
+          border-color: #d97020;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(217,112,32,0.1);
+        }
+        .l-err {
+          background: #fff4f1;
+          border: 1px solid rgba(210,60,30,0.18);
+          border-radius: 10px;
+          padding: 10px 13px;
+          font-size: 12.5px;
+          color: #b83820;
+          margin-bottom: 14px;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+        }
+        .l-btn {
+          width: 100%;
+          background: #231e1a;
+          color: #fff8f3;
+          font-family: 'Noto Sans JP', sans-serif;
+          font-size: 13.5px;
+          font-weight: 600;
+          border: none;
+          border-radius: 11px;
+          padding: 13px;
+          cursor: pointer;
+          letter-spacing: 0.06em;
+          transition: background 0.18s, transform 0.18s, box-shadow 0.18s;
+          margin-top: 6px;
+        }
+        .l-btn:hover:not(:disabled) {
+          background: #38302a;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 22px rgba(35,30,26,0.22);
+        }
+        .l-btn:active:not(:disabled) { transform: translateY(0); }
+        .l-btn:disabled { background: #c0ada0; cursor: not-allowed; }
+        .l-btn-inner { display:flex; align-items:center; justify-content:center; gap:8px; }
+        .l-spin {
+          width:15px; height:15px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.65s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .l-note {
+          font-size: 11px;
+          color: #b8a898;
+          text-align: center;
+          margin-top: 18px;
+        }
+        .l-footer {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 9px;
+          margin-top: 18px;
+        }
+        .l-foot-item {
+          background: rgba(255,255,255,0.75);
+          border: 1px solid rgba(196,168,130,0.18);
+          border-radius: 13px;
+          padding: 11px 6px;
+          text-align: center;
+        }
+        .l-foot-icon { font-size: 17px; margin-bottom: 5px; }
+        .l-foot-lbl { font-size: 10.5px; color: #9a8778; font-weight: 500; }
+      `}</style>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo area */}
-        <div className="text-center mb-8">
-          <h1 className="text-white text-2xl font-bold tracking-tight">補助金サポートシステム</h1>
-          <p className="text-primary-200 text-sm mt-1">小規模事業者持続化補助金 第19回</p>
-          <div className="mt-2 inline-flex items-center gap-2 bg-accent-500/20 border border-accent-500/30 rounded-full px-3 py-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse"></span>
-            <span className="text-accent-300 text-xs font-medium">申請受付中 〜 2026年4月30日</span>
+      <div className="login-root">
+        <div className="login-wrap">
+
+          <div className="l-badge">
+            <span className="l-dot" />
+            <span className="l-badge-txt">申請受付中　〜　2026年4月30日</span>
           </div>
-        </div>
 
-        {/* Login card */}
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
-          <h2 className="text-white font-semibold text-lg mb-6">ログイン</h2>
+          <h1 className="l-title">補助金サポート<br/>システム</h1>
+          <p className="l-sub">小規模事業者持続化補助金＜一般型＞ 第19回</p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-primary-200 text-sm mb-1.5 font-medium">ユーザーID</label>
-              <input
-                type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                placeholder="ユーザーIDを入力"
-                required
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-400/30 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-primary-200 text-sm mb-1.5 font-medium">パスワード</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="パスワードを入力"
-                required
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-primary-300 focus:ring-2 focus:ring-primary-400/30 transition-all"
-              />
-            </div>
+          <div className="l-card">
+            <p className="l-card-title">アカウントにログイン</p>
 
-            {error && (
-              <div className="bg-red-500/20 border border-red-400/30 rounded-xl px-4 py-3 text-red-200 text-sm">
-                ⚠️ {error}
+            <form onSubmit={handleLogin}>
+              <div className="l-field">
+                <label className="l-label">ユーザーID</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="IDを入力"
+                  required
+                  className="l-input"
+                />
               </div>
-            )}
+              <div className="l-field">
+                <label className="l-label">パスワード</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="パスワードを入力"
+                  required
+                  className="l-input"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-500 hover:bg-primary-400 disabled:bg-primary-700 text-white font-semibold rounded-xl py-3.5 transition-all duration-200 shadow-lg shadow-primary-600/30 hover:shadow-primary-400/40 hover:-translate-y-0.5 active:translate-y-0 mt-2"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ログイン中...
+              {error && (
+                <div className="l-err">
+                  <span>⚠</span><span>{error}</span>
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} className="l-btn">
+                <span className="l-btn-inner">
+                  {loading ? <><span className="l-spin" />ログイン中...</> : 'ログイン'}
                 </span>
-              ) : 'ログイン'}
-            </button>
-          </form>
+              </button>
+            </form>
 
-          <p className="text-primary-300/60 text-xs text-center mt-6">
-            アカウントをお持ちでない方は担当者にご連絡ください
-          </p>
-        </div>
+            <p className="l-note">アカウントをお持ちでない方は担当者にご連絡ください</p>
+          </div>
 
-        {/* Info footer */}
-        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          {[
-            { icon: '🔒', label: 'セキュア' },
-            { icon: '🤖', label: 'AI支援' },
-            { icon: '📱', label: 'スマホ対応' },
-          ].map(item => (
-            <div key={item.label} className="bg-white/5 border border-white/10 rounded-2xl py-3">
-              <div className="text-xl mb-1">{item.icon}</div>
-              <div className="text-primary-300 text-xs">{item.label}</div>
-            </div>
-          ))}
+          <div className="l-footer">
+            {[
+              { icon: '🔐', label: 'セキュア認証' },
+              { icon: '🤖', label: 'AI申請支援' },
+              { icon: '📱', label: 'スマホ対応' },
+            ].map(item => (
+              <div key={item.label} className="l-foot-item">
+                <div className="l-foot-icon">{item.icon}</div>
+                <div className="l-foot-lbl">{item.label}</div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
-    </div>
+    </>
   )
 }
