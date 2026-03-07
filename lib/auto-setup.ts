@@ -1,7 +1,12 @@
 import { prisma } from './db'
 import bcrypt from 'bcryptjs'
 
+// 同一プロセス内で1回だけ実行するフラグ
+let setupDone = false
+
 export async function autoSetup() {
+  if (setupDone) return
+  setupDone = true
   try {
     // DB接続確認
     await prisma.$queryRaw`SELECT 1`
@@ -273,7 +278,7 @@ export async function autoSetup() {
     const exists = await prisma.user.findUnique({ where: { username: 'admin' } })
     if (!exists) {
       const { default: bcrypt } = await import('bcryptjs')
-      const hashed = await bcrypt.hash('admin1234', 10)
+      const hashed = await bcrypt.hash('admin1234', 8)
       await prisma.user.create({
         data: { username: 'admin', password: hashed, role: 'admin', companyName: '管理者', contactName: '管理者' }
       })

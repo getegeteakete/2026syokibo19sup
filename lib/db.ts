@@ -1,13 +1,19 @@
 import { PrismaClient } from '@prisma/client'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
+declare global {
+  // eslint-disable-next-line no-var
+  var __prisma: PrismaClient | undefined
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  })
+// Vercelサーバーレス環境ではglobalThisにキャッシュしてコールド起動を最小化
+export const prisma = globalThis.__prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+})
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// 本番でもグローバルキャッシュ（Vercelは関数インスタンスを再利用するため有効）
+globalThis.__prisma = prisma

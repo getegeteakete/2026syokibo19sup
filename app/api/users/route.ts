@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     const exists = await prisma.user.findUnique({ where: { username } })
     if (exists) return err('このユーザー名は既に使用されています', 400)
 
-    const hashed = await bcrypt.hash(password, 10)
+    const hashed = await bcrypt.hash(password, 8)
     const user = await prisma.user.create({
       data: {
         username, password: hashed, role: 'customer',
@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     const targetId = session.role === 'admin' ? (body.userId || session.id) : session.id
     if (session.role !== 'admin' && targetId !== session.id) return err('権限がありません', 403)
     const { password, userId: _uid, ...updateData } = body
-    if (password) updateData.password = await bcrypt.hash(password, 10)
+    if (password) updateData.password = await bcrypt.hash(password, 8)
     const user = await prisma.user.update({ where: { id: targetId }, data: updateData })
     return NextResponse.json({ success: true, user: { ...user, password: undefined } })
   } catch (e) {
