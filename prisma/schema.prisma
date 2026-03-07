@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  role          String    @default("customer") // "admin" | "customer"
+  companyName   String?
+  contactName   String?
+  email         String?
+  phone         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  hearingData   HearingData?
+  chatMessages  ChatMessage[]
+  tokenUsage    TokenUsage[]
+  applicationStatus ApplicationStatus?
+}
+
+model HearingData {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 会社情報
+  companyName         String?
+  representativeName  String?
+  address             String?
+  phone               String?
+  email               String?
+  businessType        String?
+  employeeCount       String?
+  foundingYear        String?
+  annualSales         String?
+  
+  // 事業概要
+  currentBusiness     String?
+  mainProducts        String?
+  targetCustomers     String?
+  salesChannels       String?
+  strengths           String?
+  challenges          String?
+  
+  // 補助金申請内容
+  subsidyPurpose      String?
+  plannedActivities   String?
+  expectedEffects     String?
+  requestedAmount     String?
+  ownContribution     String?
+  implementationPlan  String?
+  
+  // 要件確認
+  requirementCheck    String?   @default("{}")
+  
+  // 申請書類データ
+  applicationDraft    String?   // JSON string of draft documents
+  
+  completionRate      Int       @default(0)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String    // "user" | "assistant"
+  content   String
+  section   String    @default("general") // chat section/context
+  imageUrl  String?
+  tokens    Int       @default(0)
+  createdAt DateTime  @default(now())
+}
+
+model TokenUsage {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  date        DateTime  @default(now())
+}
+
+model ApplicationStatus {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  stage         String    @default("requirement_check")
+  // requirement_check -> amount_check -> hearing -> shokoukai -> document_prep -> electronic_app -> waiting -> adopted -> report_prep -> completed
+  
+  requirementCheckDone  Boolean @default(false)
+  amountCheckDone       Boolean @default(false)
+  hearingDone           Boolean @default(false)
+  shokoukaiFiled        Boolean @default(false)
+  shokoukaiFiingDate    DateTime?
+  electronicFiled       Boolean @default(false)
+  electronicFilingDate  DateTime?
+  adopted               Boolean @default(false)
+  adoptedDate           DateTime?
+  reportFiled           Boolean @default(false)
+  reportFiledDate       DateTime?
+  
+  notes         String?
+  updatedAt     DateTime  @updatedAt
+}
+
+model SystemSettings {
+  id              String  @id @default("1")
+  globalTokenLimit Int    @default(100000)
+  perUserTokenLimit Int   @default(10000)
+}
