@@ -8,9 +8,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (session.role === 'admin') redirect('/admin')
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div style={{ display:'flex', height:'100vh', overflow:'hidden', background:'#f4f7f4', fontFamily:"'Noto Sans JP',sans-serif" }}>
       <DashboardNav session={session} />
-      <main className="flex-1 overflow-y-auto min-w-0">
+      <main style={{ flex:1, overflowY:'auto', minWidth:0 }}>
         {children}
       </main>
     </div>

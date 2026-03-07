@@ -5,14 +5,22 @@ import { useState } from 'react'
 import { SessionUser } from '@/lib/auth'
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'ホーム', icon: '🏠', exact: true },
-  { href: '/dashboard/chat', label: 'AIチャット', icon: '💬' },
-  { href: '/dashboard/hearing', label: 'ヒアリング', icon: '📝' },
-  { href: '/dashboard/documents', label: '必要書類', icon: '📂' },
-  { href: '/dashboard/smart-schedule', label: 'スケジュール', icon: '📅' },
-  { href: '/dashboard/simulation', label: '申請シミュレーション', icon: '🖥️' },
-  { href: '/dashboard/reports', label: '実績報告', icon: '📊' },
-  { href: '/dashboard/data', label: 'データ確認', icon: '🔍' },
+  { href: '/dashboard', label: 'ホーム', exact: true,
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> },
+  { href: '/dashboard/chat', label: 'AIチャット',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+  { href: '/dashboard/hearing', label: 'ヒアリング',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+  { href: '/dashboard/documents', label: '必要書類',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> },
+  { href: '/dashboard/smart-schedule', label: 'スケジュール',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+  { href: '/dashboard/simulation', label: '申請シミュレーション',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
+  { href: '/dashboard/reports', label: '実績報告',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+  { href: '/dashboard/data', label: 'データ確認',
+    icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> },
 ]
 
 export default function DashboardNav({ session }: { session: SessionUser }) {
@@ -25,100 +33,108 @@ export default function DashboardNav({ session }: { session: SessionUser }) {
     router.push('/login')
   }
 
-  const isActive = (item: typeof NAV_ITEMS[0]) => {
-    if (item.exact) return pathname === item.href
-    return pathname.startsWith(item.href)
-  }
+  const isActive = (item: typeof NAV_ITEMS[0]) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href)
 
-  const NavContent = () => (
-    <>
+  const SidebarContent = () => (
+    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:'#1b3a28', fontFamily:"'Noto Sans JP',sans-serif" }}>
       {/* Logo */}
-      <div className="p-5 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center text-white text-lg shadow-md shadow-primary-600/30">
-            📋
+      <div style={{ padding:'20px 16px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+          <div style={{ width:'32px', height:'32px', background:'#2d6a4f', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 8px rgba(0,0,0,0.25)', flexShrink:0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
           </div>
           <div>
-            <p className="font-bold text-slate-800 text-sm leading-tight">補助金サポート</p>
-            <p className="text-xs text-slate-500">第19回 一般型</p>
+            <div style={{ fontSize:'12px', fontWeight:700, color:'#eaf6ee', lineHeight:1.3 }}>補助金サポート</div>
+            <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)', marginTop:'1px' }}>第19回 一般型</div>
           </div>
         </div>
       </div>
 
-      {/* User info */}
-      <div className="mx-3 mt-3 mb-2 p-3 bg-primary-50 rounded-xl border border-primary-100">
-        <p className="text-xs text-primary-600 font-medium">{session.companyName || session.username}</p>
-        <p className="text-xs text-slate-500 mt-0.5">顧客ポータル</p>
+      {/* User badge */}
+      <div style={{ margin:'10px 12px 4px', background:'rgba(45,106,79,0.4)', border:'1px solid rgba(116,198,157,0.15)', borderRadius:'6px', padding:'7px 10px' }}>
+        <div style={{ fontSize:'11px', fontWeight:600, color:'#74c69d', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {session.companyName || session.username}
+        </div>
+        <div style={{ fontSize:'10px', color:'rgba(255,255,255,0.3)', marginTop:'1px' }}>顧客ポータル</div>
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 px-3 py-2 space-y-0.5">
-        {NAV_ITEMS.map(item => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-              isActive(item)
-                ? 'bg-primary-600 text-white shadow-md shadow-primary-600/30'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <span className="text-base">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+      {/* Section label */}
+      <div style={{ fontSize:'10px', fontWeight:600, color:'rgba(255,255,255,0.25)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'12px 16px 6px' }}>メニュー</div>
+
+      {/* Nav */}
+      <nav style={{ flex:1, padding:'2px 8px', overflowY:'auto' }}>
+        {NAV_ITEMS.map(item => {
+          const active = isActive(item)
+          return (
+            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} style={{
+              display:'flex', alignItems:'center', gap:'10px',
+              padding:'9px 12px', borderRadius:'7px',
+              fontSize:'13px', fontWeight: active ? 600 : 500,
+              color: active ? '#d8f3e8' : 'rgba(255,255,255,0.5)',
+              textDecoration:'none', marginBottom:'2px',
+              background: active ? '#2d6a4f' : 'transparent',
+              boxShadow: active ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
+              transition:'all 0.15s',
+            }}>
+              <span style={{ color: active ? '#74c69d' : 'rgba(255,255,255,0.3)', flexShrink:0 }}>{item.icon}</span>
+              {item.label}
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-slate-200">
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-        >
-          <span>🚪</span>
+      <div style={{ height:'1px', background:'rgba(255,255,255,0.07)', margin:'0 12px' }}/>
+
+      {/* Logout */}
+      <div style={{ padding:'8px' }}>
+        <button onClick={handleLogout} style={{
+          display:'flex', alignItems:'center', gap:'10px', width:'100%',
+          padding:'9px 12px', borderRadius:'7px', fontSize:'13px', fontWeight:500,
+          color:'rgba(255,255,255,0.3)', background:'none', border:'none',
+          cursor:'pointer', fontFamily:"'Noto Sans JP',sans-serif",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background='rgba(255,80,80,0.1)'; e.currentTarget.style.color='#ff9999' }}
+        onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(255,255,255,0.3)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
           ログアウト
         </button>
       </div>
-    </>
+    </div>
   )
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex flex-col w-56 bg-white border-r border-slate-200 shrink-0 h-full">
-        <NavContent />
+      {/* Desktop */}
+      <aside style={{ width:'210px', minWidth:'210px', height:'100%', flexShrink:0, display:'flex' }} className="hidden md:flex">
+        <SidebarContent />
       </aside>
 
-      {/* Mobile nav */}
+      {/* Mobile header */}
       <div className="md:hidden">
-        {/* Mobile header bar */}
-        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📋</span>
-            <span className="font-bold text-sm text-slate-800">補助金サポート</span>
-          </div>
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-slate-100">
-            <div className={`w-5 flex flex-col gap-1 transition-all ${mobileOpen ? 'gap-0' : ''}`}>
-              <span className={`block h-0.5 bg-slate-600 transition-all ${mobileOpen ? 'rotate-45 translate-y-0.5' : ''}`} />
-              <span className={`block h-0.5 bg-slate-600 transition-all ${mobileOpen ? 'opacity-0' : ''}`} />
-              <span className={`block h-0.5 bg-slate-600 transition-all ${mobileOpen ? '-rotate-45 -translate-y-0.5' : ''}`} />
+        <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:40, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 16px', height:'52px', background:'#1b3a28', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <div style={{ width:'26px', height:'26px', background:'#2d6a4f', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
+            <span style={{ fontSize:'13px', fontWeight:700, color:'#eaf6ee' }}>補助金サポート</span>
+          </div>
+          <button onClick={() => setMobileOpen(!mobileOpen)} style={{ background:'none', border:'none', cursor:'pointer', padding:'6px', display:'flex', flexDirection:'column', gap:'4px' }}>
+            {[0,1,2].map(i => <span key={i} style={{ display:'block', width:'18px', height:'2px', background:'rgba(255,255,255,0.6)', borderRadius:'2px' }}/>)}
           </button>
         </div>
 
-        {/* Mobile drawer */}
         {mobileOpen && (
-          <div className="fixed inset-0 z-30 flex">
-            <div className="w-64 bg-white h-full flex flex-col border-r border-slate-200 shadow-2xl mt-14">
-              <NavContent />
-            </div>
-            <div className="flex-1 bg-black/40" onClick={() => setMobileOpen(false)} />
+          <div style={{ position:'fixed', inset:0, zIndex:30, display:'flex' }}>
+            <div style={{ width:'220px', height:'100%', marginTop:'52px' }}><SidebarContent /></div>
+            <div style={{ flex:1, background:'rgba(0,0,0,0.5)' }} onClick={() => setMobileOpen(false)}/>
           </div>
         )}
-
-        {/* Spacer for fixed header */}
-        <div className="h-14" />
+        <div style={{ height:'52px' }}/>
       </div>
     </>
   )
