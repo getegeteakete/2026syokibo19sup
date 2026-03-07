@@ -190,8 +190,20 @@ export async function autoSetup() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "requirementCheck" TEXT;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "applicationDraft" TEXT;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "completionRate" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
   } catch (e) { console.error('[auto-setup] HearingData migration:', e) }
 
+
+  // 全テーブルのタイムスタンプ列マイグレーション
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "User" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ApplicationStatus" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "NotificationLog" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    console.log('[setup] timestamp migration done')
+  } catch (e) { console.error('[setup] timestamp migration:', e) }
   // admin アカウント作成
   try {
     const exists = await prisma.user.findUnique({ where: { username: 'admin' } })
