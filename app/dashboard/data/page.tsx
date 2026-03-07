@@ -25,7 +25,7 @@ export default async function DataPage() {
       {/* Basic info */}
       <div className="bg-white dash-card p-5">
         <h2 className="font-semibold text-[#1b3a28] mb-4">👤 基本情報</h2>
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px"}}>
           {[
             { label: 'ユーザーID', value: session.username },
             { label: '会社名・屋号', value: user?.companyName },
