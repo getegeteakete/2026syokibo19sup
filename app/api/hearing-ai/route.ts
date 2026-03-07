@@ -127,8 +127,8 @@ const HEARING_SYSTEM_PROMPT = `
 `
 
 export async function POST(request: NextRequest) {
-  const client = new Anthropic()
   try {
+    const client = new Anthropic()
     const session = await getSessionFromRequest(request)
     if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
