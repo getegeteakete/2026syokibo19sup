@@ -4,16 +4,13 @@ import { prisma } from '@/lib/db'
 import Anthropic from '@anthropic-ai/sdk'
 import { CHAT_SYSTEM_PROMPTS } from '@/lib/constants'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
-
 export async function POST(request: NextRequest) {
   const session = await getSessionFromRequest(request)
   if (!session) {
     return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
   }
 
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   try {
     const formData = await request.formData()
     const message = formData.get('message') as string

@@ -3,8 +3,6 @@ import { getSessionFromRequest } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic()
-
 // ============================================================
 // 様式2（経営計画書）生成プロンプト
 // ============================================================
@@ -119,6 +117,7 @@ export async function POST(request: NextRequest) {
     const hearingData = await prisma.hearingData.findUnique({ where: { userId: session.id } })
     if (!hearingData) return NextResponse.json({ error: 'ヒアリングデータがありません。先にヒアリングを完了してください。' }, { status: 400 })
 
+    const client = new Anthropic()
     const data = { ...hearingData } as Record<string, string>
     delete data.id
     delete data.userId

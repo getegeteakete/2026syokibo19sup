@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSessionFromRequest } from '@/lib/auth'
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic()
-
 // ============================================================
 // ヒアリング用システムプロンプト
 // 様式2（経営計画書）+ 様式3（補助事業計画書）に必要な全情報を収集
@@ -129,6 +127,7 @@ const HEARING_SYSTEM_PROMPT = `
 `
 
 export async function POST(request: NextRequest) {
+  const client = new Anthropic()
   try {
     const session = await getSessionFromRequest(request)
     if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
