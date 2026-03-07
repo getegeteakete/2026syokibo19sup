@@ -40,9 +40,11 @@ export default function UsersPage() {
   const [success, setSuccess] = useState('')
 
   const load = async () => {
-    const res = await fetch('/api/users')
-    const data = await res.json()
-    setUsers(data.users || [])
+    try {
+      const res = await fetch('/api/users')
+      const data = await res.json()
+      setUsers(data.users || [])
+    } catch { setUsers([]) }
   }
   useEffect(() => { load() }, [])
 
@@ -64,7 +66,7 @@ export default function UsersPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`${name} を削除しますか？`)) return
-    await fetch(`/api/users?userId=${id}`, { method:'DELETE' })
+    try { await fetch(`/api/users?userId=${id}`, { method:'DELETE' }) } catch {}
     load()
   }
 

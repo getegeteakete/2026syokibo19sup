@@ -44,7 +44,7 @@ export default function DocumentsPage() {
           } catch {}
         }
       }
-    })
+    }).catch(() => {})
   }, [])
 
   const generate = async (type: 'form2' | 'form3') => {

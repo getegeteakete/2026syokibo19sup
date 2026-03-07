@@ -125,7 +125,7 @@ export default function SimulationPage() {
         subsidyContent: h.plannedActivities || '',
         expectedEffect: h.expectedEffects || '',
       }))
-    })
+    }).catch(() => {})
   }, [])
 
   const update = (field: keyof AppData, value: unknown) => {

@@ -20,21 +20,23 @@ export default function TokensPage() {
   const [saved, setSaved] = useState(false)
 
   const load = async () => {
-    const res = await fetch('/api/tokens')
-    const d = await res.json()
-    setData(d); if (d.settings) setSettings(d.settings)
+    try {
+      const res = await fetch('/api/tokens')
+      const d = await res.json()
+      setData(d); if (d.settings) setSettings(d.settings)
+    } catch { setData(null) }
   }
   useEffect(() => { load() }, [])
 
   const save = async () => {
     setSaving(true)
-    await fetch('/api/tokens', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings)})
+    try { await fetch('/api/tokens', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(settings)}) } catch {}
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000); load()
   }
 
   const resetUser = async (userId:string, name:string) => {
     if (!confirm(`${name} のトークン使用量をリセットしますか？`)) return
-    await fetch('/api/tokens', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({resetUserId:userId})})
+    try { await fetch('/api/tokens', {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({resetUserId:userId})}) } catch {}
     load()
   }
 

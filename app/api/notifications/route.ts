@@ -10,14 +10,12 @@ function daysUntil(target: Date): number {
 
 // GET: Get notification settings
 export async function GET(request: NextRequest) {
-  const session = await getSessionFromRequest(request)
-  if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-
-  const userId = session.role === 'admin'
-    ? new URL(request.url).searchParams.get('userId') || session.id
-    : session.id
-
   try {
+    const session = await getSessionFromRequest(request)
+    if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+    const userId = session.role === 'admin'
+      ? new URL(request.url).searchParams.get('userId') || session.id
+      : session.id
     const settings = await (prisma as any).notificationSettings?.findUnique?.({ where: { userId } }).catch(() => null)
     const logs = await (prisma as any).notificationLog?.findMany?.({
       where: { userId },

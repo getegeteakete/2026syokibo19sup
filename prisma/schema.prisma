@@ -64,7 +64,7 @@ model HearingData {
   applicationDraft    String?   // JSON string of draft documents
   
   completionRate      Int       @default(0)
-  representativeBackgroundString?
+  representativeBackground String?
   location                String?
   salesBreakdown          String?
   salesTrend              String?

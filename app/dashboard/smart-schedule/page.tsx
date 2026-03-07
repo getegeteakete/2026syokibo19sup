@@ -67,20 +67,24 @@ export default function SmartSchedulePage() {
 
   const saveNotif = async () => {
     setSaving(true)
-    await fetch('/api/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'save_settings', ...notifSettings }),
-    })
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_settings', ...notifSettings }),
+      })
+    } catch {}
     setSaving(false)
   }
 
   const sendTest = async () => {
-    await fetch('/api/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'test' }),
-    })
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'test' }),
+      })
+    } catch {}
     setTestSent(true)
     setTimeout(() => setTestSent(false), 3000)
   }

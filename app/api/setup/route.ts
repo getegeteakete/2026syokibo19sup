@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
+  try {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get('key')
   if (key !== 'setup2026') {
@@ -292,4 +293,7 @@ export async function GET(request: NextRequest) {
     results,
     loginInfo: allOk ? { id: 'admin', password: 'admin1234' } : undefined
   })
+  } catch(e) {
+    return NextResponse.json({ error: String(e), results: [] }, { status: 500 })
+  }
 }

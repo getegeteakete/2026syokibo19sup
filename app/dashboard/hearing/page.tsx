@@ -108,11 +108,13 @@ export default function HearingPage() {
   }
 
   const manualSave = async () => {
-    await fetch('/api/hearing', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(hearingData),
-    })
+    try {
+      await fetch('/api/hearing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(hearingData),
+      })
+    } catch {}
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }

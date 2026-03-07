@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
   }
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   try {
+    const anthropic = new Anthropic()
     const formData = await request.formData()
     const message = formData.get('message') as string
     const section = (formData.get('section') as string) || 'general'
@@ -126,14 +126,14 @@ export async function POST(request: NextRequest) {
 
 // Get chat history
 export async function GET(request: NextRequest) {
-  const session = await getSessionFromRequest(request)
-  if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
-
-  const { searchParams } = new URL(request.url)
-  const section = searchParams.get('section') || 'general'
-  const userId = session.role === 'admin' ? (searchParams.get('userId') || session.id) : session.id
-
   try {
+    const session = await getSessionFromRequest(request)
+    if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+
+    const { searchParams } = new URL(request.url)
+    const section = searchParams.get('section') || 'general'
+    const userId = session.role === 'admin' ? (searchParams.get('userId') || session.id) : session.id
+
     const messages = await prisma.chatMessage.findMany({
       where: { userId, section },
       orderBy: { createdAt: 'asc' },
