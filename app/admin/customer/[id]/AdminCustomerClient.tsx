@@ -69,7 +69,7 @@ export default function AdminCustomerClient({ user, stages, stageIndex }: Props)
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } finally { setSaving(false) }
+    } catch(e) { console.error(e) } finally { setSaving(false) }
   }
 
   const TABS = [

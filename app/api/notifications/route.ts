@@ -17,16 +17,18 @@ export async function GET(request: NextRequest) {
     ? new URL(request.url).searchParams.get('userId') || session.id
     : session.id
 
-  const settings = await (prisma as any).notificationSettings?.findUnique?.({ where: { userId } })
-    .catch(() => null)
-
-  const logs = await (prisma as any).notificationLog?.findMany?.({
-    where: { userId },
-    orderBy: { sentAt: 'desc' },
-    take: 20,
-  }).catch(() => [])
-
-  return NextResponse.json({ settings, logs })
+  try {
+    const settings = await (prisma as any).notificationSettings?.findUnique?.({ where: { userId } }).catch(() => null)
+    const logs = await (prisma as any).notificationLog?.findMany?.({
+      where: { userId },
+      orderBy: { sentAt: 'desc' },
+      take: 20,
+    }).catch(() => [])
+    return NextResponse.json({ settings: settings || null, logs: logs || [] })
+  } catch(e) {
+    console.error('GET /api/notifications error:', e)
+    return NextResponse.json({ settings: null, logs: [] })
+  }
 }
 
 // POST: Save settings and send test/scheduled notifications
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
   const session = await getSessionFromRequest(request)
   if (!session) return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
 
-  const body = await request.json()
+  let body: any = {}
+  try { body = await request.json() } catch(_) {}
   const { action, userId: bodyUserId, ...settingsData } = body
   const userId = session.role === 'admin' ? (bodyUserId || session.id) : session.id
 

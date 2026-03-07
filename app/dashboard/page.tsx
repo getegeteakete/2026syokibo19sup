@@ -126,8 +126,7 @@ export default async function DashboardPage() {
           <Link key={item.href} href={item.href} style={{
             ...cardStyle, padding:'16px', textDecoration:'none', display:'block', transition:'all 0.15s',
           }}
-          onMouseEnter={(e: any) => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 4px 12px rgba(27,58,40,0.1)' }}
-          onMouseLeave={(e: any) => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 1px 4px rgba(27,58,40,0.05)' }}>
+          className="dash-quick-action">
             <div style={{ width:'36px', height:'36px', background:item.bg, borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'10px', color:item.iconColor }}>
               {item.icon}
             </div>

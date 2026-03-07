@@ -136,11 +136,15 @@ export async function GET(request: NextRequest) {
   const section = searchParams.get('section') || 'general'
   const userId = session.role === 'admin' ? (searchParams.get('userId') || session.id) : session.id
 
-  const messages = await prisma.chatMessage.findMany({
-    where: { userId, section },
-    orderBy: { createdAt: 'asc' },
-    take: 50,
-  })
-
-  return NextResponse.json({ messages })
+  try {
+    const messages = await prisma.chatMessage.findMany({
+      where: { userId, section },
+      orderBy: { createdAt: 'asc' },
+      take: 50,
+    })
+    return NextResponse.json({ messages })
+  } catch(e) {
+    console.error('GET /api/chat error:', e)
+    return NextResponse.json({ messages: [] })
+  }
 }

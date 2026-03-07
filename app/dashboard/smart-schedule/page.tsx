@@ -29,9 +29,9 @@ export default function SmartSchedulePage() {
   useEffect(() => {
     // Load hearing data to generate smart schedule
     Promise.all([
-      fetch('/api/hearing').then(r => r.json()),
-      fetch('/api/admin/status').then(r => r.json()),
-      fetch('/api/notifications').then(r => r.json()),
+      fetch('/api/hearing').then(r => r.json()).catch(() => ({})),
+      fetch('/api/admin/status').then(r => r.json()).catch(() => ({})),
+      fetch('/api/notifications').then(r => r.json()).catch(() => ({})),
     ]).then(([hearingRes, statusRes, notifRes]) => {
       const hearing = hearingRes.data
       const status = statusRes.status

@@ -6,10 +6,13 @@ export default async function DataPage() {
   const session = await getSession()
   if (!session) return null
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.id },
-    include: { hearingData: true, applicationStatus: true }
-  })
+  let user: any = null
+  try {
+    user = await prisma.user.findUnique({
+      where: { id: session.id },
+      include: { hearingData: true, applicationStatus: true }
+    })
+  } catch (_) {}
 
   const hearing = user?.hearingData
   const status = user?.applicationStatus

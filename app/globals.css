@@ -135,3 +135,19 @@ body { font-family: var(--font-noto); background: var(--bg); margin: 0; }
 .dash-btn-primary:hover { background: #3d8a65; }
 .dash-btn-primary:disabled { background: #9aab9f; cursor: default; }
 .dash-btn-saved { background: #52b788 !important; }
+
+/* Quick action card hover */
+.dash-quick-action {
+  display: block;
+  text-decoration: none;
+  border-radius: 10px;
+  border: 1px solid #e2ece5;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(27,58,40,0.05);
+  padding: 16px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.dash-quick-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(27,58,40,0.1);
+}

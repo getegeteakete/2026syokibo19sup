@@ -6,9 +6,12 @@ export default async function SchedulePage() {
   const session = await getSession()
   if (!session) return null
 
-  const status = await prisma.applicationStatus.findUnique({
-    where: { userId: session.id }
-  })
+  let status: any = null
+  try {
+    status = await prisma.applicationStatus.findUnique({
+      where: { userId: session.id }
+    })
+  } catch (_) {}
 
   const stage = status?.stage || 'requirement_check'
   const stageIndex = STAGES.findIndex(s => s.id === stage)
