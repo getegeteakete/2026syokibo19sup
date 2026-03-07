@@ -239,9 +239,19 @@ export default function DashboardNav({ session }: { session: SessionUser }) {
             </div>
             <span style={{ fontSize:'13px', fontWeight:700, color:'#eaf6ee' }}>補助金サポート</span>
           </div>
-          <button className="dnav-hamburger" onClick={() => setMobileOpen(!mobileOpen)}>
-            <span/><span/><span/>
-          </button>
+          <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+            <button
+              onClick={handleLogout}
+              style={{ display:'flex', alignItems:'center', gap:'5px', padding:'6px 11px', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:'8px', cursor:'pointer', color:'rgba(255,255,255,0.7)', fontSize:'12px', fontWeight:600, fontFamily:"'Noto Sans JP',sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              ログアウト
+            </button>
+            <button className="dnav-hamburger" onClick={() => setMobileOpen(!mobileOpen)}>
+              <span/><span/><span/>
+            </button>
+          </div>
         </div>
         <div className="dnav-mobile-spacer" style={{ height:'52px' }} />
 
