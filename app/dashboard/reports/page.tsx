@@ -20,14 +20,14 @@ export default function ReportsPage() {
   const totalRequired = REPORT_DOCS.filter(d => d.required).length
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="dash-page space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-800">📊 実績報告</h1>
-        <p className="text-slate-500 text-sm mt-0.5">補助事業終了後の実績報告手続き</p>
+        <h1 className="text-xl font-bold text-[#1b3a28]">📊 実績報告</h1>
+        <p className="text-[#7a8f80] text-sm mt-0.5">補助事業終了後の実績報告手続き</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-white rounded-2xl border border-slate-200 p-1">
+      <div className="flex gap-1 bg-white dash-card p-1">
         {[
           { id: 'info', label: '概要・手順', icon: 'ℹ️' },
           { id: 'docs', label: '提出書類', icon: '📎' },
@@ -37,7 +37,7 @@ export default function ReportsPage() {
             key={tab.id}
             onClick={() => setSection(tab.id as typeof section)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-medium transition-all ${
-              section === tab.id ? 'bg-primary-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'
+              section === tab.id ? 'bg-primary-500 text-white shadow-md' : 'text-[#7a8f80] hover:bg-[#f6fbf7]'
             }`}
           >
             <span>{tab.icon}</span>
@@ -70,8 +70,8 @@ export default function ReportsPage() {
           </div>
 
           {/* Steps */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-            <h3 className="font-semibold text-slate-800">実績報告の流れ</h3>
+          <div className="bg-white dash-card p-5 space-y-4">
+            <h3 className="font-semibold text-[#1b3a28]">実績報告の流れ</h3>
             {[
               {
                 step: 1,
@@ -109,17 +109,17 @@ export default function ReportsPage() {
                   {item.step}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                  <p className="text-sm font-semibold text-[#1b3a28]">{item.title}</p>
+                  <p className="text-xs text-[#7a8f80] mt-0.5">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Effect report */}
-          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 text-sm">
-            <h3 className="font-semibold text-slate-700 mb-2">📈 事業効果報告書について</h3>
-            <p className="text-slate-600">補助事業終了から1年後に、事業の効果・成果を報告する「事業効果報告書」の提出が必要です。</p>
+          <div className="bg-[#f6fbf7] dash-card p-4 text-sm">
+            <h3 className="font-semibold text-[#2d4a35] mb-2">📈 事業効果報告書について</h3>
+            <p className="text-[#3d5c47]">補助事業終了から1年後に、事業の効果・成果を報告する「事業効果報告書」の提出が必要です。</p>
           </div>
         </div>
       )}
@@ -127,12 +127,12 @@ export default function ReportsPage() {
       {section === 'docs' && (
         <div className="space-y-4">
           {/* Progress */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <div className="bg-white dash-card p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-slate-700">必須書類の準備状況</span>
+              <span className="text-sm font-medium text-[#2d4a35]">必須書類の準備状況</span>
               <span className="text-sm font-bold text-primary-600">{checkedCount} / {totalRequired}</span>
             </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-[#eef3ef] rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-primary-500 to-green-400 rounded-full progress-fill"
                 style={{ width: `${(checkedCount / totalRequired) * 100}%` }}
@@ -143,7 +143,7 @@ export default function ReportsPage() {
           <div className="space-y-2">
             {REPORT_DOCS.map(doc => (
               <label key={doc.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all bg-white ${
-                checked[doc.id] ? 'border-green-300 bg-green-50' : 'border-slate-200 hover:bg-slate-50'
+                checked[doc.id] ? 'border-green-300 bg-green-50' : 'border-[#e2ece5] hover:bg-[#f6fbf7]'
               }`}>
                 <input
                   type="checkbox"
@@ -153,10 +153,10 @@ export default function ReportsPage() {
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-800">{doc.label}</span>
+                    <span className="text-sm font-semibold text-[#1b3a28]">{doc.label}</span>
                     {doc.required && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">必須</span>}
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">{doc.description}</p>
+                  <p className="text-xs text-[#7a8f80] mt-0.5">{doc.description}</p>
                 </div>
               </label>
             ))}
@@ -165,7 +165,7 @@ export default function ReportsPage() {
       )}
 
       {section === 'chat' && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden" style={{height: '500px'}}>
+        <div className="bg-white dash-card overflow-hidden" style={{height: '500px'}}>
           <Link
             href="/dashboard/chat?section=general"
             className="flex items-center justify-center h-full text-primary-600 font-medium hover:bg-primary-50 transition-colors"

@@ -16,15 +16,15 @@ export default async function DataPage() {
   const stageIndex = STAGES.findIndex(s => s.id === (status?.stage || 'requirement_check'))
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
+    <div className="dash-page space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-slate-800">🔍 登録データ確認</h1>
-        <p className="text-slate-500 text-sm mt-0.5">入力済みの情報を確認できます</p>
+        <h1 className="text-xl font-bold text-[#1b3a28]">🔍 登録データ確認</h1>
+        <p className="text-[#7a8f80] text-sm mt-0.5">入力済みの情報を確認できます</p>
       </div>
 
       {/* Basic info */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h2 className="font-semibold text-slate-800 mb-4">👤 基本情報</h2>
+      <div className="bg-white dash-card p-5">
+        <h2 className="font-semibold text-[#1b3a28] mb-4">👤 基本情報</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           {[
             { label: 'ユーザーID', value: session.username },
@@ -33,17 +33,17 @@ export default async function DataPage() {
             { label: 'メールアドレス', value: user?.email },
             { label: '電話番号', value: user?.phone },
           ].map(item => item.value && (
-            <div key={item.label} className="bg-slate-50 rounded-xl p-3">
-              <p className="text-xs text-slate-500">{item.label}</p>
-              <p className="text-sm font-medium text-slate-800 mt-0.5">{item.value}</p>
+            <div key={item.label} className="bg-[#f6fbf7] rounded-xl p-3">
+              <p className="text-xs text-[#7a8f80]">{item.label}</p>
+              <p className="text-sm font-medium text-[#1b3a28] mt-0.5">{item.value}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Application status */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <h2 className="font-semibold text-slate-800 mb-4">📋 申請ステータス</h2>
+      <div className="bg-white dash-card p-5">
+        <h2 className="font-semibold text-[#1b3a28] mb-4">📋 申請ステータス</h2>
         <div className="flex items-center gap-3 p-3 bg-primary-50 rounded-xl mb-4">
           <span className="text-2xl">{STAGES[stageIndex]?.icon}</span>
           <div>
@@ -61,9 +61,9 @@ export default async function DataPage() {
             { label: '採択', done: status?.adopted },
             { label: '実績報告', done: status?.reportFiled },
           ].map(item => (
-            <div key={item.label} className={`flex items-center gap-2 p-2 rounded-lg ${item.done ? 'bg-green-50' : 'bg-slate-50'}`}>
+            <div key={item.label} className={`flex items-center gap-2 p-2 rounded-lg ${item.done ? 'bg-green-50' : 'bg-[#f6fbf7]'}`}>
               <span>{item.done ? '✅' : '⭕'}</span>
-              <span className={item.done ? 'text-green-700' : 'text-slate-600'}>{item.label}</span>
+              <span className={item.done ? 'text-green-700' : 'text-[#3d5c47]'}>{item.label}</span>
             </div>
           ))}
         </div>
@@ -71,9 +71,9 @@ export default async function DataPage() {
 
       {/* Hearing data */}
       {hearing && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-white dash-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-800">📝 ヒアリングデータ</h2>
+            <h2 className="font-semibold text-[#1b3a28]">📝 ヒアリングデータ</h2>
             <span className="text-sm font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
               記入率 {hearing.completionRate}%
             </span>
@@ -91,13 +91,13 @@ export default async function DataPage() {
               { label: '具体的な取組内容', value: hearing.plannedActivities },
               { label: '申請希望額', value: hearing.requestedAmount },
             ].filter(item => item.value).map(item => (
-              <div key={item.label} className="bg-slate-50 rounded-xl p-3">
-                <p className="text-xs text-slate-500 mb-1">{item.label}</p>
-                <p className="text-sm text-slate-800 whitespace-pre-wrap">{item.value}</p>
+              <div key={item.label} className="bg-[#f6fbf7] rounded-xl p-3">
+                <p className="text-xs text-[#7a8f80] mb-1">{item.label}</p>
+                <p className="text-sm text-[#1b3a28] whitespace-pre-wrap">{item.value}</p>
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-400 mt-4">最終更新: {new Date(hearing.updatedAt).toLocaleString('ja-JP')}</p>
+          <p className="text-xs text-[#9aab9f] mt-4">最終更新: {new Date(hearing.updatedAt).toLocaleString('ja-JP')}</p>
         </div>
       )}
     </div>

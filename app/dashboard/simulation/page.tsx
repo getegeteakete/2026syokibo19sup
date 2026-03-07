@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 // ============================================================
 // 型定義
@@ -81,6 +81,7 @@ const DOCUMENTS = [
 // ============================================================
 export default function SimulationPage() {
   const [step, setStep] = useState(1)
+  const containerRef = useRef<HTMLDivElement>(null)
   const [data, setData] = useState<AppData>({
     companyType: '個人事業主',
     companyName: '', companyNameKana: '', representativeName: '',
@@ -231,7 +232,7 @@ export default function SimulationPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div style={{display:"flex",flexDirection:"column",minHeight:"100vh"}}>
       {/* Top header - simulating the real system */}
       <div className="shrink-0 bg-[#003087] text-white px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -254,9 +255,9 @@ export default function SimulationPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden min-h-0">
+      <div style={{display:"flex",flex:1}}>
         {/* Main form area */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={containerRef} style={{flex:1}}>
           {/* Step indicator */}
           <div className="bg-white border-b border-slate-200 px-4 py-3">
             <div className="flex gap-1 overflow-x-auto">
@@ -761,14 +762,14 @@ export default function SimulationPage() {
             {/* Navigation buttons */}
             <div className="flex justify-between pt-4 mt-4 border-t border-slate-200">
               {step > 1 && (
-                <button onClick={() => setStep(s => s - 1)}
+                <button onClick={() => { setStep(s => s - 1); setTimeout(() => { const el = document.getElementById('main-content'); if(el) el.scrollTop = 0; else window.scrollTo({top:0,behavior:'smooth'}); }, 30) }}
                   className="flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium text-sm transition-all">
                   ← 前へ
                 </button>
               )}
               <div className="ml-auto">
                 {step < STEPS.length && (
-                  <button onClick={() => setStep(s => s + 1)}
+                  <button onClick={() => { setStep(s => s + 1); setTimeout(() => { const el = document.getElementById('main-content'); if(el) el.scrollTop = 0; else window.scrollTo({top:0,behavior:'smooth'}); }, 30) }}
                     className="flex items-center gap-2 px-6 py-2.5 bg-[#003087] hover:bg-blue-900 text-white rounded-xl font-medium text-sm shadow-md transition-all">
                     次へ →
                   </button>

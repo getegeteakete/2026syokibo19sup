@@ -5,11 +5,11 @@ import { HEARING_SECTIONS, REQUIREMENT_CHECKS } from '@/lib/constants'
 type HearingData = Record<string, string>
 
 const TABS = [
-  { id: 'requirement', label: '申請要件チェック', icon: '✅' },
-  { id: 'company', label: '会社情報', icon: '🏢' },
-  { id: 'current_business', label: '現在の事業', icon: '📊' },
-  { id: 'subsidy_plan', label: '補助事業計画', icon: '🎯' },
-  { id: 'amount', label: '補助額シミュレーション', icon: '💰' },
+  { id: 'requirement', label: '申請要件チェック' },
+  { id: 'company', label: '会社情報' },
+  { id: 'current_business', label: '現在の事業' },
+  { id: 'subsidy_plan', label: '補助事業計画' },
+  { id: 'amount', label: '補助額シミュレーション' },
 ]
 
 export default function HearingPage() {
@@ -20,7 +20,6 @@ export default function HearingPage() {
   const [saved, setSaved] = useState(false)
   const [completionRate, setCompletionRate] = useState(0)
 
-  // Load existing data
   useEffect(() => {
     fetch('/api/hearing').then(r => r.json()).then(({ data: d }) => {
       if (d) {
@@ -53,150 +52,111 @@ export default function HearingPage() {
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
-  // Subsidy calculation
   const requestedAmount = parseInt(data.requestedAmount?.replace(/[^0-9]/g, '') || '0')
   const subsidyAmount = Math.min(Math.floor(requestedAmount * (2 / 3)), 500000)
   const ownBurden = requestedAmount - subsidyAmount
-
   const allRequirementsMet = REQUIREMENT_CHECKS.every(r => requirements[r.id])
   const requirementCount = REQUIREMENT_CHECKS.filter(r => requirements[r.id]).length
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+    <div className="dash-page" style={{ fontFamily:"'Noto Sans JP',sans-serif" }}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'20px' }}>
         <div>
-          <h1 className="text-xl font-bold text-slate-800">📝 ヒアリング・事業計画</h1>
-          <p className="text-slate-500 text-sm mt-0.5">申請書類作成のための情報収集</p>
+          <h1 className="dash-h1">ヒアリング・事業計画</h1>
+          <p className="dash-subtitle">申請書類作成のための情報収集</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-xs text-slate-500">記入率</p>
-            <p className="text-lg font-bold text-primary-600">{completionRate}%</p>
+        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
+          <div style={{ textAlign:'right' }}>
+            <div style={{ fontSize:'10px', color:'#7a8f80', marginBottom:'1px' }}>記入率</div>
+            <div style={{ fontSize:'22px', fontWeight:800, color: completionRate>=80 ? '#2d6a4f' : completionRate>=50 ? '#b7791f' : '#9aab9f', lineHeight:1 }}>{completionRate}%</div>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              saved
-                ? 'bg-green-500 text-white'
-                : 'bg-primary-500 hover:bg-primary-400 text-white shadow-md shadow-primary-500/30'
-            }`}
-          >
-            {saving ? '保存中...' : saved ? '✅ 保存済み' : '💾 保存'}
+          <button className={`dash-btn-primary${saved?' dash-btn-saved':''}`} onClick={handleSave} disabled={saving}>
+            {saving ? '保存中...' : saved ? '✅ 保存済み' : '保存'}
           </button>
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-primary-500 to-green-400 rounded-full progress-fill" style={{ width: `${completionRate}%` }} />
+      {/* Progress */}
+      <div style={{ height:'5px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden', marginBottom:'20px' }}>
+        <div style={{ height:'100%', background:'linear-gradient(90deg,#2d6a4f,#52b788)', width:`${completionRate}%`, transition:'width .6s', borderRadius:'10px' }}/>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto bg-white rounded-2xl border border-slate-200 p-1">
+      <div className="dash-tab-bar">
         {TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-primary-500 text-white shadow-md'
-                : 'text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            <span>{tab.icon}</span>
-            <span className="hidden sm:inline">{tab.label}</span>
+          <button key={tab.id} className={`dash-tab${activeTab===tab.id?' active':''}`} onClick={() => setActiveTab(tab.id)}>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Requirement check tab */}
+      {/* Requirement check */}
       {activeTab === 'requirement' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800">申請要件チェックリスト</h2>
-            <span className={`text-sm font-medium px-3 py-1 rounded-full ${
-              allRequirementsMet ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-            }`}>
+        <div className="dash-card" style={{ marginBottom:'16px' }}>
+          <div className="dash-card-header">
+            <span>申請要件チェックリスト</span>
+            <span className={`dash-badge ${allRequirementsMet ? 'dash-badge-green' : 'dash-badge-amber'}`}>
               {requirementCount} / {REQUIREMENT_CHECKS.length} 確認済み
             </span>
           </div>
-
-          {!allRequirementsMet && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
-              ⚠️ すべての要件を満たしていることを確認してから申請に進んでください。
+          <div style={{ padding:'16px 20px' }}>
+            {!allRequirementsMet && (
+              <div style={{ background:'#fef9e7', border:'1px solid #f6d860', borderRadius:'7px', padding:'10px 14px', fontSize:'12px', color:'#b7791f', marginBottom:'14px' }}>
+                ⚠️ すべての要件を満たしていることを確認してから申請に進んでください。
+              </div>
+            )}
+            {allRequirementsMet && (
+              <div style={{ background:'#e8f5ee', border:'1px solid #b7dfc4', borderRadius:'7px', padding:'10px 14px', fontSize:'12px', color:'#2d6a4f', marginBottom:'14px' }}>
+                ✅ 申請要件をすべて確認しました！次のステップに進めます。
+              </div>
+            )}
+            <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+              {REQUIREMENT_CHECKS.map(req => (
+                <label key={req.id} style={{
+                  display:'flex', alignItems:'flex-start', gap:'10px', padding:'10px 12px',
+                  borderRadius:'8px', border:'1px solid', cursor:'pointer',
+                  background: requirements[req.id] ? '#e8f5ee' : '#f6fbf7',
+                  borderColor: requirements[req.id] ? '#b7dfc4' : '#e2ece5',
+                }}>
+                  <input type="checkbox" checked={requirements[req.id]||false}
+                    onChange={e => handleRequirementChange(req.id, e.target.checked)}
+                    style={{ marginTop:'2px', width:'15px', height:'15px', accentColor:'#2d6a4f', flexShrink:0 }} />
+                  <div>
+                    <p style={{ fontSize:'13px', fontWeight:500, color:'#1b3a28', margin:0 }}>{req.label}</p>
+                    {(req as any).description && <p style={{ fontSize:'11px', color:'#7a8f80', marginTop:'2px' }}>{(req as any).description}</p>}
+                  </div>
+                </label>
+              ))}
             </div>
-          )}
-
-          {allRequirementsMet && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
-              ✅ 申請要件をすべて確認しました！次のステップに進めます。
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {REQUIREMENT_CHECKS.map(req => (
-              <label key={req.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                requirements[req.id] ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={requirements[req.id] || false}
-                  onChange={e => handleRequirementChange(req.id, e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-green-500"
-                />
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{req.label}</p>
-                  {req.description && <p className="text-xs text-slate-500 mt-0.5">{req.description}</p>}
-                </div>
-              </label>
-            ))}
           </div>
         </div>
       )}
 
       {/* Form sections */}
-      {HEARING_SECTIONS.map(section => activeTab === section.id && (
-        <div key={section.id} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-          <h2 className="font-semibold text-slate-800">{section.icon} {section.title}</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {section.questions.map(q => (
-              <div key={q.id} className={q.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {q.label}
-                  {q.required && <span className="text-red-500 ml-1">*</span>}
+      {HEARING_SECTIONS.map((section: any) => activeTab === section.id && (
+        <div key={section.id} className="dash-card" style={{ marginBottom:'16px' }}>
+          <div className="dash-card-header">{section.title}</div>
+          <div style={{ padding:'16px 20px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
+            {section.questions.map((q: any) => (
+              <div key={q.id} style={{ gridColumn: q.type==='textarea' ? '1/-1' : 'auto' }}>
+                <label style={{ display:'block', fontSize:'12px', fontWeight:600, color:'#3d5c47', marginBottom:'4px' }}>
+                  {q.label}{q.required && <span style={{ color:'#e74c3c', marginLeft:'3px' }}>*</span>}
                 </label>
                 {q.type === 'textarea' ? (
-                  <textarea
-                    value={data[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value)}
-                    rows={3}
-                    placeholder={`${q.label}を入力してください`}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition-all resize-none"
-                  />
+                  <textarea value={data[q.id]||''} onChange={e => handleChange(q.id, e.target.value)}
+                    rows={3} placeholder={q.label} className="dash-input" style={{ resize:'vertical', lineHeight:1.6 }} />
                 ) : q.type === 'select' ? (
-                  <select
-                    value={data[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition-all"
-                  >
+                  <select value={data[q.id]||''} onChange={e => handleChange(q.id, e.target.value)} className="dash-input">
                     <option value="">選択してください</option>
-                    {q.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {q.options?.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
                 ) : (
-                  <input
-                    type="text"
-                    value={data[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value)}
-                    placeholder={`${q.label}を入力`}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition-all"
-                  />
+                  <input type="text" value={data[q.id]||''} onChange={e => handleChange(q.id, e.target.value)}
+                    placeholder={q.label} className="dash-input" />
                 )}
               </div>
             ))}
@@ -204,85 +164,44 @@ export default function HearingPage() {
         </div>
       ))}
 
-      {/* Amount simulation tab */}
+      {/* Amount simulation */}
       {activeTab === 'amount' && (
-        <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h2 className="font-semibold text-slate-800 mb-4">💰 補助額シミュレーション</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  補助対象経費の合計見込み額（円）
-                </label>
-                <input
-                  type="text"
-                  value={data.requestedAmount || ''}
-                  onChange={e => handleChange('requestedAmount', e.target.value)}
-                  placeholder="例: 750000"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition-all"
-                />
-              </div>
-
+        <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
+          <div className="dash-card">
+            <div className="dash-card-header">補助額シミュレーション</div>
+            <div style={{ padding:'16px 20px' }}>
+              <label style={{ display:'block', fontSize:'12px', fontWeight:600, color:'#3d5c47', marginBottom:'5px' }}>
+                補助対象経費の合計見込み額（円）
+              </label>
+              <input type="text" value={data.requestedAmount||''} onChange={e => handleChange('requestedAmount', e.target.value)}
+                placeholder="例: 750000" className="dash-input" style={{ marginBottom:'14px' }} />
               {requestedAmount > 0 && (
-                <div className="bg-gradient-to-br from-primary-50 to-green-50 border border-primary-200 rounded-2xl p-5">
-                  <h3 className="font-semibold text-slate-800 mb-4 text-center">試算結果</h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="bg-white rounded-xl p-3 shadow-sm">
-                      <p className="text-xs text-slate-500 mb-1">補助対象経費</p>
-                      <p className="text-lg font-bold text-slate-800">{requestedAmount.toLocaleString()}円</p>
-                    </div>
-                    <div className="bg-primary-600 text-white rounded-xl p-3 shadow-md shadow-primary-600/30">
-                      <p className="text-xs text-primary-200 mb-1">補助金額（2/3）</p>
-                      <p className="text-lg font-bold">{subsidyAmount.toLocaleString()}円</p>
-                      {requestedAmount > 750000 && <p className="text-xs text-primary-300 mt-1">上限50万円適用</p>}
-                    </div>
-                    <div className="bg-white rounded-xl p-3 shadow-sm">
-                      <p className="text-xs text-slate-500 mb-1">自己負担額</p>
-                      <p className="text-lg font-bold text-amber-600">{ownBurden.toLocaleString()}円</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center gap-2 p-2 bg-white rounded-xl">
-                      <span className="text-green-500">✓</span>
-                      <span className="text-slate-700">補助率: <strong>2/3</strong>（約66.7%）</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-white rounded-xl">
-                      <span>{requestedAmount <= 750000 ? '✓' : '⚠️'}</span>
-                      <span className="text-slate-700">補助上限: <strong>50万円</strong>
-                        {requestedAmount > 750000 && <span className="text-amber-600 ml-1">（上限に達しています）</span>}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-xl">
-                      <span>💡</span>
-                      <span className="text-amber-800 text-xs">補助金は事業完了後の精算払いです。先に全額を立て替える必要があります。</span>
-                    </div>
+                <div style={{ background:'linear-gradient(135deg,#e8f5ee,#f0faf4)', border:'1px solid #b7dfc4', borderRadius:'10px', padding:'20px' }}>
+                  <p style={{ fontSize:'12px', fontWeight:700, color:'#1b3a28', textAlign:'center', marginBottom:'16px' }}>試算結果</p>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', textAlign:'center' }}>
+                    {[
+                      { label:'補助対象経費', value:`${requestedAmount.toLocaleString()}円`, bg:'#fff', color:'#1b3a28' },
+                      { label:'補助金額（2/3）', value:`${subsidyAmount.toLocaleString()}円`, bg:'#2d6a4f', color:'#fff', note: requestedAmount>750000?'上限50万円適用':undefined },
+                      { label:'自己負担額', value:`${ownBurden.toLocaleString()}円`, bg:'#fff', color:'#b7791f' },
+                    ].map(c => (
+                      <div key={c.label} style={{ background:c.bg, borderRadius:'8px', padding:'12px', boxShadow:'0 1px 4px rgba(0,0,0,0.08)' }}>
+                        <p style={{ fontSize:'10px', opacity:.7, marginBottom:'4px', color:c.color }}>{c.label}</p>
+                        <p style={{ fontSize:'16px', fontWeight:800, color:c.color, lineHeight:1 }}>{c.value}</p>
+                        {c.note && <p style={{ fontSize:'10px', opacity:.7, marginTop:'3px', color:c.color }}>{c.note}</p>}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Eligible expenses */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <h3 className="font-semibold text-slate-800 mb-3">補助対象となる経費</h3>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {[
-                '机広告費（チラシ・ポスター・HP制作等）',
-                '展示会等出展費',
-                '旅費（販路開拓のための出張等）',
-                '開発費（新商品・パッケージ等）',
-                '資料購入費（市場調査等）',
-                '雑役務費（軽微な委託費等）',
-                '借料（機器・スペースのレンタル）',
-                '設備処分費（既存設備の撤去等）',
-                '委託費（専門家への委託）',
-                '外注費（加工・設計等の外注）',
-              ].map((expense, i) => (
-                <div key={i} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-xs text-slate-700">
-                  <span className="text-green-500">✓</span>
-                  {expense}
+          <div className="dash-card">
+            <div className="dash-card-header">補助対象となる経費</div>
+            <div style={{ padding:'14px 20px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px' }}>
+              {['広告費（チラシ・HP制作等）','展示会等出展費','旅費','開発費','資料購入費','雑役務費','借料','設備処分費','委託費','外注費'].map(e => (
+                <div key={e} style={{ display:'flex', alignItems:'center', gap:'6px', padding:'6px 8px', background:'#f6fbf7', borderRadius:'6px', fontSize:'12px', color:'#1b3a28' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#52b788" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  {e}
                 </div>
               ))}
             </div>
@@ -290,14 +209,9 @@ export default function HearingPage() {
         </div>
       )}
 
-      {/* Save button at bottom */}
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-3 bg-primary-500 hover:bg-primary-400 text-white font-semibold rounded-xl shadow-md shadow-primary-500/30 transition-all hover:-translate-y-0.5"
-        >
-          {saving ? '保存中...' : saved ? '✅ 保存済み' : '💾 保存する'}
+      <div style={{ display:'flex', justifyContent:'flex-end', marginTop:'4px' }}>
+        <button className={`dash-btn-primary${saved?' dash-btn-saved':''}`} onClick={handleSave} disabled={saving} style={{ padding:'10px 28px', fontSize:'13px' }}>
+          {saving ? '保存中...' : saved ? '✅ 保存済み' : '保存する'}
         </button>
       </div>
     </div>
