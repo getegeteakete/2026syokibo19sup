@@ -54,7 +54,7 @@ export default async function AdminCustomerPage({ params }: { params: Promise<{ 
 
       {/* Pass to client component for interactive parts */}
       <AdminCustomerClient
-        user={{ ...user, password: undefined as unknown as string, totalTokens }}
+        user={{ ...user, totalTokens }}
         stages={STAGES}
         stageIndex={stageIndex}
       />
