@@ -86,6 +86,13 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      {/* キャッチコピー */}
+      <div style={{ marginBottom:'12px', padding:'12px 16px', background:'linear-gradient(135deg,#1b3a28,#2d6a4f)', borderRadius:'10px', textAlign:'center' }}>
+        <p style={{ margin:0, fontSize:'14px', fontWeight:800, color:'#eaf6ee', letterSpacing:'0.02em', lineHeight:1.6 }}>
+          AIを導入しないと生き残れない時代になりました。
+        </p>
+      </div>
+
       {/* Progress */}
       <div style={{ ...cardStyle, padding:'18px 20px', marginBottom:'20px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
@@ -118,13 +125,6 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* キャッチコピー */}
-      <div style={{ marginBottom:'12px', padding:'12px 16px', background:'linear-gradient(135deg,#1b3a28,#2d6a4f)', borderRadius:'10px', textAlign:'center' }}>
-        <p style={{ margin:0, fontSize:'14px', fontWeight:800, color:'#eaf6ee', letterSpacing:'0.02em', lineHeight:1.6 }}>
-          AIを導入しないと生き残れない時代になりました。
-        </p>
       </div>
 
       {/* Quick actions */}
