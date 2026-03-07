@@ -13,28 +13,32 @@ export async function GET(request: NextRequest) {
     if (!session) return err('認証が必要です', 401)
 
     if (session.role === 'admin') {
-      // まずユーザー一覧を取得（tokenUsageは別途集計）
+      // ユーザー一覧を1クエリで取得
       const users = await prisma.user.findMany({
         where: { role: 'customer' },
         include: {
-          hearingData: { select: { completionRate: true, updatedAt: true } },
+          hearingData: { select: { completionRate: true } },
           applicationStatus: { select: { stage: true, adopted: true, electronicFiled: true } },
         },
         orderBy: { createdAt: 'desc' },
       })
 
-      // tokenUsageは別クエリで安全に取得
-      const usersWithTokens = await Promise.all(users.map(async (u) => {
-        let totalTokens = 0
-        try {
-          const agg = await prisma.tokenUsage.aggregate({
-            where: { userId: u.id },
-            _sum: { inputTokens: true, outputTokens: true },
-          })
-          totalTokens = (agg._sum.inputTokens || 0) + (agg._sum.outputTokens || 0)
-        } catch (_) { /* tokenUsageテーブルが未作成の場合は0 */ }
+      // tokenUsageを1クエリで全員分まとめて集計
+      let tokenMap: Record<string, number> = {}
+      try {
+        const tokenGroups = await prisma.tokenUsage.groupBy({
+          by: ['userId'],
+          _sum: { inputTokens: true, outputTokens: true },
+        })
+        tokenMap = Object.fromEntries(
+          tokenGroups.map(t => [t.userId, (t._sum.inputTokens || 0) + (t._sum.outputTokens || 0)])
+        )
+      } catch (_) { /* TokenUsageテーブルが未作成の場合 */ }
 
-        return { ...u, password: undefined, totalTokens }
+      const usersWithTokens = users.map(u => ({
+        ...u,
+        password: undefined,
+        totalTokens: tokenMap[u.id] || 0,
       }))
 
       return NextResponse.json({ users: usersWithTokens })

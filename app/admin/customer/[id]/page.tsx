@@ -1,13 +1,15 @@
 import { prisma } from '@/lib/db'
 import { STAGES } from '@/lib/constants'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import AdminCustomerClient from './AdminCustomerClient'
 
 export default async function AdminCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
+  // DBエラー時も404にせずエラーメッセージを表示
   let user: any = null
+  let dbError: string | null = null
+
   try {
     user = await prisma.user.findUnique({
       where: { id },
@@ -18,13 +20,39 @@ export default async function AdminCustomerPage({ params }: { params: Promise<{ 
       }
     })
   } catch (e) {
+    dbError = String(e)
     console.error('Customer page DB error:', e)
-    // テーブルが未作成の可能性 — エラーページを出さずに空データで表示
   }
 
-  if (!user || user.role !== 'customer') notFound()
+  // DBエラー時はエラーページ表示
+  if (dbError) {
+    return (
+      <div style={{ padding: '40px', fontFamily: "'Noto Sans JP',sans-serif" }}>
+        <Link href="/admin/users" style={{ fontSize: '13px', color: '#7a8f80', textDecoration: 'none' }}>← 顧客一覧に戻る</Link>
+        <div style={{ marginTop: '24px', background: '#fff2f2', border: '1px solid #ffc0c0', borderRadius: '10px', padding: '20px' }}>
+          <p style={{ fontWeight: 700, color: '#c0392b', marginBottom: '8px' }}>データベースエラー</p>
+          <p style={{ fontSize: '12px', color: '#888', fontFamily: 'monospace' }}>{dbError}</p>
+          <p style={{ fontSize: '13px', color: '#666', marginTop: '12px' }}>
+            セットアップが必要な場合は <a href="/api/setup?key=setup2026" style={{ color: '#2d6a4f' }}>セットアップを実行</a> してください。
+          </p>
+        </div>
+      </div>
+    )
+  }
 
-  // tokenUsageは別途安全に集計
+  // ユーザーが見つからない場合
+  if (!user || user.role !== 'customer') {
+    return (
+      <div style={{ padding: '40px', fontFamily: "'Noto Sans JP',sans-serif" }}>
+        <Link href="/admin/users" style={{ fontSize: '13px', color: '#7a8f80', textDecoration: 'none' }}>← 顧客一覧に戻る</Link>
+        <div style={{ marginTop: '24px', background: '#f4f7f4', borderRadius: '10px', padding: '40px', textAlign: 'center' }}>
+          <p style={{ color: '#7a8f80', fontSize: '14px' }}>顧客が見つかりません (ID: {id})</p>
+        </div>
+      </div>
+    )
+  }
+
+  // tokenUsageを安全に集計
   let totalTokens = 0
   try {
     const agg = await prisma.tokenUsage.aggregate({
@@ -62,7 +90,7 @@ export default async function AdminCustomerPage({ params }: { params: Promise<{ 
             {user.companyName || '(会社名未設定)'}
           </h1>
           <p style={{ fontSize: '12px', color: '#7a8f80', marginTop: '3px' }}>
-            @{user.username}　{user.email ? `｜ ${user.email}` : ''}　{user.phone ? `｜ ${user.phone}` : ''}
+            @{user.username}{user.email ? `　｜　${user.email}` : ''}{user.phone ? `　｜　${user.phone}` : ''}
           </p>
         </div>
         <span style={{
