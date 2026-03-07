@@ -37,8 +37,7 @@ export default function LoginPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
-        .login-root {
+.login-root {
           min-height: 100vh;
           background-color: #faf7f4;
           background-image:
