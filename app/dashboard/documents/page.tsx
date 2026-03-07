@@ -1,109 +1,270 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const DOCS = [
-  { id:'gbiz', label:'GビズIDプライム取得', required:true, urgent:true,
-    desc:'電子申請に必須。取得に2〜3週間かかるため早めに！',
-    link:'https://gbiz-id.go.jp/top/', linkLabel:'GビズIDサイトへ',
-    steps:['法人番号（個人は住所・氏名等）を準備','GビズIDサイトへアクセス','プライムアカウントを申請','審査完了後ログイン確認'] },
-  { id:'style4', label:'事業支援計画書（様式4）', required:true, urgent:true,
-    desc:'商工会議所が発行。4月16日締切のため最優先！',
-    steps:['最寄りの商工会議所に連絡・予約','持参書類を確認して面談','事業計画を説明','様式4を受領・PDF化'] },
-  { id:'keiei', label:'経営計画書（様式2）', required:true, urgent:false,
-    desc:'自社概要・現在の経営状況・経営方針を記載',
-    steps:['ヒアリングページで情報を入力','AIチャットで下書きを作成','内容を確認・修正','PDF形式で保存'] },
-  { id:'hojojigyou', label:'補助事業計画書（様式3-1）', required:true, urgent:false,
-    desc:'補助事業の内容・目的・効果を具体的に記載',
-    steps:['補助で実施する取り組みを整理','AIチャットで文章化','数値目標を明記','内容を確認・修正'] },
-  { id:'keihi', label:'経費明細書（様式3-2）', required:true, urgent:false,
-    desc:'補助対象経費の種類・金額を記載',
-    steps:['経費の種類・金額を確認','申請シミュレーションで入力練習','見積書を取得','金額を正確に記入'] },
-  { id:'kakutei', label:'確定申告書', required:true, urgent:false,
-    desc:'直近1期分（個人：青/白色申告書、法人：法人税申告書）',
-    steps:['税務署・e-Taxで書類を準備','全ページスキャンしてPDF化'] },
+type GenStatus = 'idle' | 'loading' | 'done' | 'error'
+
+const INDUSTRY_OPTIONS = [
+  '飲食業', '小売業', '製造業', '建設業', 'サービス業', '美容・理容業',
+  '医療・介護', '宿泊業', 'IT・情報通信', '農業・林業・水産業', 'その他'
+]
+
+const REQUIRED_DOCS = [
+  { id: 'style4', label: '様式4 事業支援計画書', required: true, hint: '商工会議所から受け取るPDF', category: '必須' },
+  { id: 'kakutei', label: '確定申告書（直近1期分）', required: true, hint: '個人:白色/青色申告書、法人:法人税申告書', category: '必須' },
+  { id: 'gbizid', label: 'GビズIDプライム', required: true, hint: '電子申請に必要。未取得の場合は早急に申請を', category: '必須' },
+  { id: 'meibo', label: '従業員名簿', required: false, hint: '常時使用する従業員がいる場合', category: '条件付き' },
+  { id: 'invoice', label: 'インボイス登録通知書', required: false, hint: 'インボイス特例を申請する場合', category: '条件付き' },
+  { id: 'wage', label: '賃金台帳の写し', required: false, hint: '賃金引上げ特例を申請する場合', category: '条件付き' },
 ]
 
 export default function DocumentsPage() {
-  const [checked, setChecked] = useState<Record<string, boolean>>({})
-  const [expanded, setExpanded] = useState<string | null>('gbiz')
+  const [activeTab, setActiveTab] = useState<'generate' | 'checklist'>('generate')
+  const [industry, setIndustry] = useState('')
+  const [form2Status, setForm2Status] = useState<GenStatus>('idle')
+  const [form3Status, setForm3Status] = useState<GenStatus>('idle')
+  const [form2Doc, setForm2Doc] = useState('')
+  const [form3Doc, setForm3Doc] = useState('')
+  const [completionRate, setCompletionRate] = useState(0)
+  const [checkedDocs, setCheckedDocs] = useState<Record<string, boolean>>({})
 
-  const toggle = (id: string) => setChecked(p => ({ ...p, [id]: !p[id] }))
-  const doneCount = DOCS.filter(d => checked[d.id]).length
+  useEffect(() => {
+    fetch('/api/hearing').then(r => r.json()).then(({ data }) => {
+      if (data) {
+        setCompletionRate(data.completionRate || 0)
+        setIndustry(data.businessType || '')
+        if (data.applicationDraft) {
+          try {
+            const draft = JSON.parse(data.applicationDraft)
+            if (draft.form2) setForm2Doc(draft.form2)
+            if (draft.form3) setForm3Doc(draft.form3)
+            if (draft.form2 || draft.form3) {
+              setForm2Status(draft.form2 ? 'done' : 'idle')
+              setForm3Status(draft.form3 ? 'done' : 'idle')
+            }
+          } catch {}
+        }
+      }
+    })
+  }, [])
+
+  const generate = async (type: 'form2' | 'form3') => {
+    if (type === 'form2') setForm2Status('loading')
+    else setForm3Status('loading')
+
+    try {
+      const res = await fetch('/api/documents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, industry }),
+      })
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+
+      if (type === 'form2') { setForm2Doc(json.document); setForm2Status('done') }
+      else { setForm3Doc(json.document); setForm3Status('done') }
+    } catch (e) {
+      if (type === 'form2') setForm2Status('error')
+      else setForm3Status('error')
+    }
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  const C = {
+    card: { background:'#fff', borderRadius:'10px', border:'1px solid #e2ece5', boxShadow:'0 1px 4px rgba(27,58,40,0.05)', marginBottom:'16px', overflow:'hidden' as const },
+    cardHeader: { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 20px', borderBottom:'1px solid #eef3ef' },
+    tab: (a: boolean) => ({ padding:'10px 18px', fontSize:'12px', fontWeight:a?700:500, cursor:'pointer', border:'none', borderBottom:a?'2px solid #2d6a4f':'2px solid transparent', background:'transparent', color:a?'#2d6a4f':'#8fa38f', fontFamily:"'Noto Sans JP',sans-serif", transition:'all .15s' }),
+    btn: (color='#2d6a4f', disabled=false) => ({ display:'inline-flex', alignItems:'center', gap:'7px', padding:'9px 20px', background:disabled?'#d5e8db':color, color:'#fff', border:'none', borderRadius:'8px', fontSize:'13px', fontWeight:600, cursor:disabled?'default':'pointer', fontFamily:"'Noto Sans JP',sans-serif", transition:'background .15s' }),
+  }
+
+  const FormCard = ({ type, title, desc, status, doc }: { type:'form2'|'form3', title:string, desc:string, status:GenStatus, doc:string }) => (
+    <div style={C.card}>
+      <div style={C.cardHeader}>
+        <div>
+          <div style={{ fontSize:'14px', fontWeight:700, color:'#1b3a28' }}>{title}</div>
+          <div style={{ fontSize:'11px', color:'#7a8f80', marginTop:'2px' }}>{desc}</div>
+        </div>
+        <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
+          {status === 'done' && (
+            <button onClick={() => copyToClipboard(doc)} style={{ ...C.btn('#3b5bdb'), fontSize:'12px', padding:'7px 14px' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              コピー
+            </button>
+          )}
+          <button
+            onClick={() => generate(type)}
+            disabled={status === 'loading' || completionRate < 30}
+            style={C.btn(status==='done'?'#52b788':'#2d6a4f', status==='loading' || completionRate < 30)}
+          >
+            {status === 'loading' ? (
+              <>
+                <div style={{ width:'12px', height:'12px', border:'2px solid rgba(255,255,255,0.3)', borderTopColor:'white', borderRadius:'50%', animation:'spin .7s linear infinite' }}/>
+                生成中...
+              </>
+            ) : status === 'done' ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                再生成
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+                AIで生成
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {completionRate < 30 && status === 'idle' && (
+        <div style={{ padding:'14px 20px', background:'#fef9e7', borderBottom:'1px solid #f6d860', fontSize:'12px', color:'#b7791f' }}>
+          ⚠️ ヒアリング収集率が {completionRate}% です。精度の高い計画書を生成するには、先にヒアリング（AIインタビュー）を進めてください。
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div style={{ padding:'14px 20px', background:'#fff2f2', fontSize:'12px', color:'#c0392b' }}>
+          ❌ 生成中にエラーが発生しました。もう一度お試しください。
+        </div>
+      )}
+
+      {status === 'loading' && (
+        <div style={{ padding:'32px 20px', textAlign:'center' }}>
+          <div style={{ width:'36px', height:'36px', border:'3px solid #e2ece5', borderTopColor:'#2d6a4f', borderRadius:'50%', animation:'spin .8s linear infinite', margin:'0 auto 12px' }}/>
+          <div style={{ fontSize:'13px', color:'#7a8f80' }}>AIが計画書を作成中です...</div>
+          <div style={{ fontSize:'11px', color:'#9aab9f', marginTop:'4px' }}>30秒〜1分ほどかかります</div>
+        </div>
+      )}
+
+      {status === 'done' && doc && (
+        <div style={{ padding:'20px', maxHeight:'500px', overflowY:'auto' }}>
+          <div style={{ background:'#f6fbf7', border:'1px solid #e2ece5', borderRadius:'8px', padding:'16px 20px', fontSize:'13px', lineHeight:1.9, color:'#1b3a28', whiteSpace:'pre-wrap', fontFamily:"'Noto Sans JP',sans-serif" }}>
+            {doc}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <div style={{ padding:'28px 32px', fontFamily:"'Noto Sans JP',sans-serif", maxWidth:'760px' }}>
+    <div style={{ padding:'28px 32px', fontFamily:"'Noto Sans JP',sans-serif", maxWidth:'860px' }}>
+      {/* Header */}
       <div style={{ marginBottom:'20px' }}>
-        <h1 style={{ fontSize:'18px', fontWeight:700, color:'#1b3a28', margin:0 }}>必要書類</h1>
-        <p style={{ fontSize:'12px', color:'#6b7c70', marginTop:'3px' }}>申請に必要な書類のチェックリスト</p>
+        <h1 style={{ fontSize:'18px', fontWeight:700, color:'#1b3a28', margin:0 }}>申請書類作成</h1>
+        <p style={{ fontSize:'12px', color:'#7a8f80', marginTop:'3px' }}>ヒアリング内容をもとにAIが申請書を自動生成します</p>
       </div>
 
-      {/* Progress */}
-      <div style={{ background:'#fff', borderRadius:'10px', border:'1px solid #e2ece5', padding:'16px 20px', marginBottom:'16px', boxShadow:'0 1px 4px rgba(27,58,40,0.05)' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
-          <span style={{ fontSize:'13px', fontWeight:600, color:'#1b3a28' }}>準備状況</span>
-          <span style={{ fontSize:'13px', fontWeight:700, color:'#2d6a4f' }}>{doneCount} / {DOCS.length} 完了</span>
-        </div>
-        <div style={{ height:'6px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden' }}>
-          <div style={{ height:'100%', background:'linear-gradient(90deg,#2d6a4f,#52b788)', borderRadius:'10px', width:`${(doneCount/DOCS.length)*100}%`, transition:'width 0.4s' }}/>
-        </div>
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:'2px', background:'#fff', border:'1px solid #e2ece5', borderRadius:'9px', padding:'3px', marginBottom:'20px' }}>
+        <button style={C.tab(activeTab==='generate')} onClick={() => setActiveTab('generate')}>📝 計画書生成</button>
+        <button style={C.tab(activeTab==='checklist')} onClick={() => setActiveTab('checklist')}>✅ 必要書類チェック</button>
       </div>
 
-      {/* Doc list */}
-      <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
-        {DOCS.map(doc => {
-          const done = checked[doc.id]
-          const open = expanded === doc.id
-          return (
-            <div key={doc.id} style={{ background:'#fff', borderRadius:'10px', border:`1px solid ${doc.urgent && !done ? '#ffd6a5' : '#e2ece5'}`, boxShadow:'0 1px 4px rgba(27,58,40,0.05)', overflow:'hidden' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'12px', padding:'13px 16px', cursor:'pointer' }}
-                onClick={() => setExpanded(open ? null : doc.id)}>
-                <input type="checkbox" checked={Boolean(done)}
-                  onChange={() => toggle(doc.id)}
-                  onClick={e => e.stopPropagation()}
-                  style={{ width:'16px', height:'16px', accentColor:'#2d6a4f', flexShrink:0 }}/>
-                <div style={{ flex:1 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-                    <span style={{ fontSize:'13px', fontWeight:600, color: done ? '#7a8f80' : '#1b3a28', textDecoration: done ? 'line-through' : 'none' }}>
-                      {doc.label}
-                    </span>
-                    {doc.required && <span style={{ fontSize:'10px', padding:'1px 6px', borderRadius:'10px', background:'#fff0f0', color:'#c0392b', fontWeight:600 }}>必須</span>}
-                    {doc.urgent && !done && <span style={{ fontSize:'10px', padding:'1px 6px', borderRadius:'10px', background:'#fff8e1', color:'#b7791f', fontWeight:600 }}>急ぎ</span>}
-                  </div>
-                  <div style={{ fontSize:'11px', color:'#7a8f80', marginTop:'2px' }}>{doc.desc}</div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9aab9f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: open ? 'rotate(180deg)' : 'none', transition:'transform 0.2s', flexShrink:0 }}>
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
+      {activeTab === 'generate' && (
+        <>
+          {/* Hearing rate warning */}
+          <div style={{ display:'flex', alignItems:'center', gap:'10px', padding:'12px 16px', background:'#fff', border:'1px solid #e2ece5', borderRadius:'9px', marginBottom:'16px' }}>
+            <div style={{ flex:1 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
+                <span style={{ fontSize:'12px', fontWeight:600, color:'#1b3a28' }}>ヒアリング収集率</span>
+                <span style={{ fontSize:'12px', fontWeight:700, color: completionRate>=70?'#2d6a4f':completionRate>=40?'#b7791f':'#9aab9f' }}>{completionRate}%</span>
               </div>
-              {open && (
-                <div style={{ padding:'4px 16px 14px 44px', borderTop:'1px solid #f0f7f2' }}>
-                  <div style={{ fontSize:'12px', fontWeight:600, color:'#3d5c47', marginBottom:'8px' }}>手順</div>
-                  <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
-                    {doc.steps.map((step, i) => (
-                      <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:'8px' }}>
-                        <div style={{ width:'20px', height:'20px', background:'#e8f5ee', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'10px', fontWeight:700, color:'#2d6a4f', flexShrink:0 }}>
-                          {i+1}
-                        </div>
-                        <span style={{ fontSize:'12px', color:'#3d5c47', lineHeight:1.5, paddingTop:'2px' }}>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {doc.link && (
-                    <a href={doc.link} target="_blank" rel="noopener noreferrer" style={{
-                      display:'inline-flex', alignItems:'center', gap:'5px', marginTop:'10px',
-                      fontSize:'12px', fontWeight:600, color:'#2d6a4f', textDecoration:'none',
-                      padding:'6px 12px', background:'#e8f5ee', borderRadius:'7px', border:'1px solid #b7dfc4',
-                    }}>
-                      {doc.linkLabel} →
-                    </a>
-                  )}
-                </div>
-              )}
+              <div style={{ height:'5px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden' }}>
+                <div style={{ height:'100%', background: completionRate>=70?'#52b788':completionRate>=40?'#f39c12':'#d5e8db', width:`${completionRate}%`, borderRadius:'10px', transition:'width .5s' }}/>
+              </div>
             </div>
-          )
-        })}
-      </div>
+            {completionRate < 70 && (
+              <a href="/dashboard/hearing" style={{ fontSize:'12px', color:'#2d6a4f', fontWeight:600, textDecoration:'none', whiteSpace:'nowrap', padding:'6px 12px', background:'#e8f5ee', borderRadius:'7px' }}>
+                ヒアリングへ →
+              </a>
+            )}
+          </div>
+
+          {/* Industry selector */}
+          <div style={{ marginBottom:'16px' }}>
+            <label style={{ display:'block', fontSize:'12px', fontWeight:600, color:'#3d5c47', marginBottom:'5px' }}>業種を選択（より精度が上がります）</label>
+            <select value={industry} onChange={e => setIndustry(e.target.value)}
+              style={{ background:'#f6fbf7', border:'1px solid #d5e8db', borderRadius:'7px', padding:'8px 12px', fontSize:'13px', color:'#1b3a28', outline:'none', width:'240px', fontFamily:"'Noto Sans JP',sans-serif" }}>
+              <option value="">選択してください</option>
+              {INDUSTRY_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+
+          <FormCard
+            type="form2"
+            title="様式2：経営計画書"
+            desc="企業概要・市場動向・強み弱み・経営方針（全4章・約4000文字）"
+            status={form2Status}
+            doc={form2Doc}
+          />
+
+          <FormCard
+            type="form3"
+            title="様式3：補助事業計画書"
+            desc="補助事業名・取組内容・業務効率化・効果試算（経費表・収支予測表付き）"
+            status={form3Status}
+            doc={form3Doc}
+          />
+
+          <div style={{ background:'#f6fbf7', border:'1px solid #e2ece5', borderRadius:'9px', padding:'14px 18px', fontSize:'12px', color:'#5a7060', lineHeight:1.8 }}>
+            <strong style={{ color:'#2d6a4f' }}>💡 ご利用方法</strong><br/>
+            ① ヒアリングページでAIインタビューを完了（収集率70%以上推奨）<br/>
+            ② 上の業種を選択<br/>
+            ③「AIで生成」ボタンで計画書を自動作成<br/>
+            ④ 生成された文章を「コピー」してGビズIDの申請フォームに貼り付け
+          </div>
+        </>
+      )}
+
+      {activeTab === 'checklist' && (
+        <div>
+          {['必須', '条件付き'].map(cat => (
+            <div key={cat} style={C.card}>
+              <div style={C.cardHeader}>
+                <span style={{ fontSize:'13px', fontWeight:700, color:'#1b3a28' }}>
+                  {cat === '必須' ? '🔴 必須書類' : '🟡 条件付き書類'}
+                </span>
+                <span style={{ fontSize:'11px', color:'#7a8f80' }}>
+                  {cat === '必須' ? '全員が必ず用意' : '該当する場合のみ'}
+                </span>
+              </div>
+              <div style={{ padding:'12px 16px', display:'flex', flexDirection:'column', gap:'8px' }}>
+                {REQUIRED_DOCS.filter(d => d.category === cat).map(doc => (
+                  <label key={doc.id} style={{
+                    display:'flex', alignItems:'flex-start', gap:'10px', padding:'11px 14px',
+                    borderRadius:'8px', border:'1px solid', cursor:'pointer',
+                    background: checkedDocs[doc.id] ? '#e8f5ee' : '#fafafa',
+                    borderColor: checkedDocs[doc.id] ? '#b7dfc4' : '#eaeaea',
+                  }}>
+                    <input type="checkbox" checked={checkedDocs[doc.id]||false}
+                      onChange={e => setCheckedDocs(prev => ({ ...prev, [doc.id]: e.target.checked }))}
+                      style={{ width:'16px', height:'16px', marginTop:'1px', accentColor:'#2d6a4f', flexShrink:0 }} />
+                    <div>
+                      <div style={{ fontSize:'13px', fontWeight:600, color:checkedDocs[doc.id]?'#2d6a4f':'#1b3a28' }}>
+                        {checkedDocs[doc.id] ? '✓ ' : ''}{doc.label}
+                      </div>
+                      <div style={{ fontSize:'11px', color:'#8fa38f', marginTop:'2px' }}>{doc.hint}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ background:'#e8f0fe', border:'1px solid #c5d8f8', borderRadius:'9px', padding:'14px 18px', fontSize:'12px', color:'#1e3a8a' }}>
+            <strong>📌 本番申請URL</strong><br/>
+            <a href="https://www.jizokukanb.com/jizokuka_r6h/oubo.php" target="_blank" rel="noreferrer"
+              style={{ color:'#2563eb', wordBreak:'break-all' }}>
+              https://www.jizokukanb.com/jizokuka_r6h/oubo.php
+            </a><br/>
+            申請画面の「受付締切回」から「第19回」を選択してGビズIDでログインしてください。
+          </div>
+        </div>
+      )}
+
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 }
