@@ -13,20 +13,30 @@ export async function GET(request: NextRequest) {
     if (!session) return err('認証が必要です', 401)
 
     if (session.role === 'admin') {
+      // まずユーザー一覧を取得（tokenUsageは別途集計）
       const users = await prisma.user.findMany({
         where: { role: 'customer' },
         include: {
           hearingData: { select: { completionRate: true, updatedAt: true } },
-          applicationStatus: true,
-          tokenUsage: { select: { inputTokens: true, outputTokens: true } },
+          applicationStatus: { select: { stage: true, adopted: true, electronicFiled: true } },
         },
         orderBy: { createdAt: 'desc' },
       })
-      const usersWithTokens = users.map(u => ({
-        ...u,
-        password: undefined,
-        totalTokens: u.tokenUsage.reduce((sum, t) => sum + t.inputTokens + t.outputTokens, 0),
+
+      // tokenUsageは別クエリで安全に取得
+      const usersWithTokens = await Promise.all(users.map(async (u) => {
+        let totalTokens = 0
+        try {
+          const agg = await prisma.tokenUsage.aggregate({
+            where: { userId: u.id },
+            _sum: { inputTokens: true, outputTokens: true },
+          })
+          totalTokens = (agg._sum.inputTokens || 0) + (agg._sum.outputTokens || 0)
+        } catch (_) { /* tokenUsageテーブルが未作成の場合は0 */ }
+
+        return { ...u, password: undefined, totalTokens }
       }))
+
       return NextResponse.json({ users: usersWithTokens })
     }
 
@@ -56,7 +66,10 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.create({
       data: {
         username, password: hashed, role: 'customer',
-        companyName, contactName, email, phone,
+        companyName: companyName || null,
+        contactName: contactName || null,
+        email: email || null,
+        phone: phone || null,
         applicationStatus: { create: { stage: 'requirement_check' } }
       }
     })
@@ -71,14 +84,11 @@ export async function PATCH(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request)
     if (!session) return err('認証が必要です', 401)
-
     const body = await request.json()
     const targetId = session.role === 'admin' ? (body.userId || session.id) : session.id
     if (session.role !== 'admin' && targetId !== session.id) return err('権限がありません', 403)
-
     const { password, userId: _uid, ...updateData } = body
     if (password) updateData.password = await bcrypt.hash(password, 10)
-
     const user = await prisma.user.update({ where: { id: targetId }, data: updateData })
     return NextResponse.json({ success: true, user: { ...user, password: undefined } })
   } catch (e) {
@@ -91,10 +101,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request)
     if (!session || session.role !== 'admin') return err('管理者権限が必要です', 403)
-
     const userId = new URL(request.url).searchParams.get('userId')
     if (!userId) return err('ユーザーIDが必要です', 400)
-
     await prisma.user.delete({ where: { id: userId } })
     return NextResponse.json({ success: true })
   } catch (e) {

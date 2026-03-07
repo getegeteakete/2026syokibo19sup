@@ -180,6 +180,34 @@ export async function GET(request: NextRequest) {
     results.push(`⚠️ テーブル作成エラー: ${String(e)}`)
   }
 
+
+  // ⑤ TokenUsageの列修正（旧スキーマからの移行）
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "inputTokens" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "outputTokens" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" ADD COLUMN IF NOT EXISTS "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    // 旧列を削除（あれば）
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "totalTokens";`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "monthlyTokens";`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "tokenLimit";`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "lastResetAt";`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "TokenUsage" DROP COLUMN IF EXISTS "updatedAt";`)
+    await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "TokenUsage_userId_key";`)
+    results.push('✅ TokenUsage列マイグレーション完了')
+  } catch (e) {
+    results.push(`⚠️ TokenUsage移行: ${String(e)}`)
+  }
+
+  // ⑥ ChatMessageの列修正
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "tokens" INTEGER NOT NULL DEFAULT 0;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT;`)
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "ChatMessage" DROP COLUMN IF EXISTS "tokensUsed";`)
+    results.push('✅ ChatMessage列マイグレーション完了')
+  } catch (e) {
+    results.push(`⚠️ ChatMessage移行: ${String(e)}`)
+  }
+
   // ③ adminアカウント作成
   try {
     const adminPassword = await bcrypt.hash('admin1234', 10)
