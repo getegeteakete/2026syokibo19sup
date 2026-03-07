@@ -64,6 +64,22 @@ model HearingData {
   applicationDraft    String?   // JSON string of draft documents
   
   completionRate      Int       @default(0)
+  representativeBackgroundString?
+  location                String?
+  salesBreakdown          String?
+  salesTrend              String?
+  profitRate              String?
+  competitors             String?
+  customerNeeds           String?
+  weaknesses              String?
+  managementPolicy        String?
+  threeYearTarget         String?
+  newTargetCustomers      String?
+  efficiencyPlan          String?
+  salesForecast1y         String?
+  salesForecast2y         String?
+  salesForecast3y         String?
+  mediaAchievements       String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 }

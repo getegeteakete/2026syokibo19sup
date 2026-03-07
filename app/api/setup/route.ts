@@ -279,6 +279,12 @@ export async function GET(request: NextRequest) {
     results.push(`⚠️ ユーザー数確認: ${String(e)}`)
   }
 
+  // HearingData追加フィールド
+  for (const f of ['representativeBackground', 'location', 'salesBreakdown', 'salesTrend', 'profitRate', 'competitors', 'customerNeeds', 'weaknesses', 'managementPolicy', 'threeYearTarget', 'newTargetCustomers', 'efficiencyPlan', 'salesForecast1y', 'salesForecast2y', 'salesForecast3y', 'mediaAchievements']) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "${f}" TEXT;`).catch(()=>{})
+  }
+  results.push('✅ HearingData new fields migrated')
+
   const allOk = results.every(r => r.startsWith('✅'))
   return NextResponse.json({
     success: allOk,

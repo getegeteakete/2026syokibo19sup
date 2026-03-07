@@ -197,6 +197,23 @@ export async function autoSetup() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "completionRate" INTEGER NOT NULL DEFAULT 0;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
     await prisma.$executeRawUnsafe(`ALTER TABLE "HearingData" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;`)
+    // 追加フィールド（様式2・様式3対応）
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "representativeBackground" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "location" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesBreakdown" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesTrend" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "profitRate" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "competitors" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "customerNeeds" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "weaknesses" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "managementPolicy" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "threeYearTarget" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "newTargetCustomers" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "efficiencyPlan" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesForecast1y" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesForecast2y" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "salesForecast3y" TEXT;`).catch(()=>{})
+    await prisma.$executeRawUnsafe(`ALTER TABLE IF EXISTS "HearingData" ADD COLUMN IF NOT EXISTS "mediaAchievements" TEXT;`).catch(()=>{})
   } catch (e) { console.error('[auto-setup] HearingData migration:', e) }
 
 
