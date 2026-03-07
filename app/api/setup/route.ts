@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'DB接続失敗', detail: String(e) }, { status: 500 })
   }
 
-  // ② テーブル作成（CREATE TABLE IF NOT EXISTS）
+  // ② テーブル作成 — Prismaスキーマと完全一致させる
   try {
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "User" (
@@ -39,12 +39,36 @@ export async function GET(request: NextRequest) {
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username");`)
     results.push('✅ Userテーブル作成')
 
+    // HearingData — スキーマの全フィールドを列挙
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "HearingData" (
         "id" TEXT NOT NULL,
         "userId" TEXT NOT NULL,
-        "data" JSONB NOT NULL DEFAULT '{}',
+        "companyName" TEXT,
+        "representativeName" TEXT,
+        "address" TEXT,
+        "phone" TEXT,
+        "email" TEXT,
+        "businessType" TEXT,
+        "employeeCount" TEXT,
+        "foundingYear" TEXT,
+        "annualSales" TEXT,
+        "currentBusiness" TEXT,
+        "mainProducts" TEXT,
+        "targetCustomers" TEXT,
+        "salesChannels" TEXT,
+        "strengths" TEXT,
+        "challenges" TEXT,
+        "subsidyPurpose" TEXT,
+        "plannedActivities" TEXT,
+        "expectedEffects" TEXT,
+        "requestedAmount" TEXT,
+        "ownContribution" TEXT,
+        "implementationPlan" TEXT,
+        "requirementCheck" TEXT DEFAULT '{}',
+        "applicationDraft" TEXT,
         "completionRate" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "HearingData_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "HearingData_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -53,6 +77,7 @@ export async function GET(request: NextRequest) {
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "HearingData_userId_key" ON "HearingData"("userId");`)
     results.push('✅ HearingDataテーブル作成')
 
+    // ChatMessage — tokensフィールド（スキーマに合わせる）
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "ChatMessage" (
         "id" TEXT NOT NULL,
@@ -60,7 +85,8 @@ export async function GET(request: NextRequest) {
         "role" TEXT NOT NULL,
         "content" TEXT NOT NULL,
         "section" TEXT NOT NULL DEFAULT 'general',
-        "tokensUsed" INTEGER NOT NULL DEFAULT 0,
+        "imageUrl" TEXT,
+        "tokens" INTEGER NOT NULL DEFAULT 0,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "ChatMessage_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "ChatMessage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -68,22 +94,21 @@ export async function GET(request: NextRequest) {
     `)
     results.push('✅ ChatMessageテーブル作成')
 
+    // TokenUsage — inputTokens/outputTokens/date（スキーマに合わせる）
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "TokenUsage" (
         "id" TEXT NOT NULL,
         "userId" TEXT NOT NULL,
-        "totalTokens" INTEGER NOT NULL DEFAULT 0,
-        "monthlyTokens" INTEGER NOT NULL DEFAULT 0,
-        "tokenLimit" INTEGER NOT NULL DEFAULT 50000,
-        "lastResetAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "inputTokens" INTEGER NOT NULL DEFAULT 0,
+        "outputTokens" INTEGER NOT NULL DEFAULT 0,
+        "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "TokenUsage_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "TokenUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
       );
     `)
-    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "TokenUsage_userId_key" ON "TokenUsage"("userId");`)
     results.push('✅ TokenUsageテーブル作成')
 
+    // ApplicationStatus — electronicFilingDate (typo修正済み)
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "ApplicationStatus" (
         "id" TEXT NOT NULL,
@@ -95,10 +120,12 @@ export async function GET(request: NextRequest) {
         "shokoukaiFiled" BOOLEAN NOT NULL DEFAULT false,
         "shokoukaiFiingDate" TIMESTAMP(3),
         "electronicFiled" BOOLEAN NOT NULL DEFAULT false,
-        "electronicFiledDate" TIMESTAMP(3),
+        "electronicFilingDate" TIMESTAMP(3),
         "adopted" BOOLEAN NOT NULL DEFAULT false,
+        "adoptedDate" TIMESTAMP(3),
         "reportFiled" BOOLEAN NOT NULL DEFAULT false,
-        "notes" TEXT NOT NULL DEFAULT '',
+        "reportFiledDate" TIMESTAMP(3),
+        "notes" TEXT,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "ApplicationStatus_pkey" PRIMARY KEY ("id"),
         CONSTRAINT "ApplicationStatus_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -109,15 +136,9 @@ export async function GET(request: NextRequest) {
 
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "SystemSettings" (
-        "id" TEXT NOT NULL,
-        "globalTokenLimit" INTEGER NOT NULL DEFAULT 1000000,
-        "perUserTokenLimit" INTEGER NOT NULL DEFAULT 50000,
-        "emailEnabled" BOOLEAN NOT NULL DEFAULT false,
-        "smsEnabled" BOOLEAN NOT NULL DEFAULT false,
-        "resendApiKey" TEXT,
-        "twilioSid" TEXT,
-        "twilioToken" TEXT,
-        "twilioFrom" TEXT,
+        "id" TEXT NOT NULL DEFAULT '1',
+        "globalTokenLimit" INTEGER NOT NULL DEFAULT 100000,
+        "perUserTokenLimit" INTEGER NOT NULL DEFAULT 10000,
         CONSTRAINT "SystemSettings_pkey" PRIMARY KEY ("id")
       );
     `)
@@ -165,13 +186,7 @@ export async function GET(request: NextRequest) {
     await prisma.user.upsert({
       where: { username: 'admin' },
       update: {},
-      create: {
-        username: 'admin',
-        password: adminPassword,
-        role: 'admin',
-        companyName: '管理者',
-        contactName: '管理者',
-      }
+      create: { username: 'admin', password: adminPassword, role: 'admin', companyName: '管理者', contactName: '管理者' }
     })
     results.push('✅ adminアカウント作成完了')
   } catch (e) {
@@ -195,11 +210,10 @@ export async function GET(request: NextRequest) {
     const count = await prisma.user.count()
     results.push(`✅ DBユーザー数: ${count}件`)
   } catch (e) {
-    results.push(`⚠️ ユーザー数確認失敗: ${String(e)}`)
+    results.push(`⚠️ ユーザー数確認: ${String(e)}`)
   }
 
   const allOk = results.every(r => r.startsWith('✅'))
-
   return NextResponse.json({
     success: allOk,
     message: allOk ? '🎉 セットアップ完了！ /login からログインできます' : '⚠️ 一部エラーがあります',
