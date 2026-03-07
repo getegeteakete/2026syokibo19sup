@@ -7,52 +7,73 @@ import AdminCustomerClient from './AdminCustomerClient'
 export default async function AdminCustomerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    include: {
-      hearingData: true,
-      applicationStatus: true,
-      tokenUsage: { select: { inputTokens: true, outputTokens: true, date: true } },
-      chatMessages: { orderBy: { createdAt: 'desc' }, take: 20 },
-    }
-  })
+  let user: any = null
+  try {
+    user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        hearingData: true,
+        applicationStatus: true,
+        chatMessages: { orderBy: { createdAt: 'desc' }, take: 20 },
+      }
+    })
+  } catch (e) {
+    console.error('Customer page DB error:', e)
+    // テーブルが未作成の可能性 — エラーページを出さずに空データで表示
+  }
 
   if (!user || user.role !== 'customer') notFound()
 
-  const totalTokens = user.tokenUsage.reduce((s, t) => s + t.inputTokens + t.outputTokens, 0)
+  // tokenUsageは別途安全に集計
+  let totalTokens = 0
+  try {
+    const agg = await prisma.tokenUsage.aggregate({
+      where: { userId: id },
+      _sum: { inputTokens: true, outputTokens: true },
+    })
+    totalTokens = (agg._sum.inputTokens || 0) + (agg._sum.outputTokens || 0)
+  } catch (_) {}
+
   const stage = user.applicationStatus?.stage || 'requirement_check'
-  const stageIndex = STAGES.findIndex(s => s.id === stage)
+  const stageIndex = STAGES.findIndex((s: any) => s.id === stage)
 
   return (
-    <div className="p-6 space-y-6">
+    <div style={{ padding: '28px 32px', fontFamily: "'Noto Sans JP',sans-serif", minHeight: '100vh' }}>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm">
-        <Link href="/admin" className="text-slate-500 hover:text-primary-600">管理</Link>
-        <span className="text-slate-300">/</span>
-        <Link href="/admin/users" className="text-slate-500 hover:text-primary-600">顧客一覧</Link>
-        <span className="text-slate-300">/</span>
-        <span className="text-slate-800 font-medium">{user.companyName || user.username}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', marginBottom: '20px' }}>
+        <Link href="/admin" style={{ color: '#7a8f80', textDecoration: 'none' }}>管理</Link>
+        <span style={{ color: '#c5d4c8' }}>/</span>
+        <Link href="/admin/users" style={{ color: '#7a8f80', textDecoration: 'none' }}>顧客一覧</Link>
+        <span style={{ color: '#c5d4c8' }}>/</span>
+        <span style={{ color: '#1b3a28', fontWeight: 600 }}>{user.companyName || user.username}</span>
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center text-primary-700 font-bold text-2xl">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+        <div style={{
+          width: '52px', height: '52px', background: '#e8f5ee', borderRadius: '14px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '22px', fontWeight: 800, color: '#2d6a4f', flexShrink: 0
+        }}>
           {(user.companyName || user.username).slice(0, 1)}
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">{user.companyName || '(会社名未設定)'}</h1>
-          <p className="text-slate-500 text-sm">ID: {user.username} | {user.email || 'メール未設定'}</p>
+        <div style={{ flex: 1 }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#1b3a28', margin: 0 }}>
+            {user.companyName || '(会社名未設定)'}
+          </h1>
+          <p style={{ fontSize: '12px', color: '#7a8f80', marginTop: '3px' }}>
+            @{user.username}　{user.email ? `｜ ${user.email}` : ''}　{user.phone ? `｜ ${user.phone}` : ''}
+          </p>
         </div>
-        <div className="ml-auto">
-          <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-            user.applicationStatus?.adopted ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
-          }`}>
-            {STAGES[stageIndex]?.icon} {STAGES[stageIndex]?.label}
-          </span>
-        </div>
+        <span style={{
+          fontSize: '12px', padding: '5px 14px', borderRadius: '20px', fontWeight: 600,
+          background: user.applicationStatus?.adopted ? '#e8f5ee' : '#f4f7f4',
+          color: user.applicationStatus?.adopted ? '#2d6a4f' : '#5a7060'
+        }}>
+          {STAGES[stageIndex]?.label || '未設定'}
+        </span>
       </div>
 
-      {/* Pass to client component for interactive parts */}
       <AdminCustomerClient
         user={{ ...user, totalTokens }}
         stages={STAGES}
