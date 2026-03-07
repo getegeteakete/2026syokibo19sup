@@ -45,9 +45,6 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo area */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur rounded-2xl mb-4 border border-white/20">
-            <span className="text-3xl">📋</span>
-          </div>
           <h1 className="text-white text-2xl font-bold tracking-tight">補助金サポートシステム</h1>
           <p className="text-primary-200 text-sm mt-1">小規模事業者持続化補助金 第19回</p>
           <div className="mt-2 inline-flex items-center gap-2 bg-accent-500/20 border border-accent-500/30 rounded-full px-3 py-1">
