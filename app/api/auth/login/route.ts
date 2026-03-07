@@ -11,7 +11,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ユーザー名とパスワードを入力してください' }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { username } })
+    // DB接続テスト
+    let user
+    try {
+      user = await prisma.user.findUnique({ where: { username } })
+    } catch (dbError) {
+      console.error('DB connection error:', dbError)
+      return NextResponse.json({ 
+        error: 'データベース接続エラー。しばらく待ってから再試行してください。',
+        detail: String(dbError)
+      }, { status: 500 })
+    }
+
     if (!user) {
       return NextResponse.json({ error: 'ユーザー名またはパスワードが正しくありません' }, { status: 401 })
     }
@@ -37,13 +48,16 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
     })
 
     return response
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'サーバーエラーが発生しました',
+      detail: String(error)
+    }, { status: 500 })
   }
 }
