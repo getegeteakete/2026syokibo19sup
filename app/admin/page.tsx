@@ -2,122 +2,157 @@ import { prisma } from '@/lib/db'
 import { STAGES } from '@/lib/constants'
 import Link from 'next/link'
 
-export default async function AdminPage() {
-  const users = await prisma.user.findMany({
-    where: { role: 'customer' },
-    include: {
-      hearingData: { select: { completionRate: true } },
-      applicationStatus: { select: { stage: true, adopted: true, electronicFiled: true } },
-      tokenUsage: { select: { inputTokens: true, outputTokens: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+const S = {
+  page: {padding:'28px 32px', fontFamily:"'Noto Sans JP',sans-serif", minHeight:'100vh'},
+  header: {marginBottom:'24px'},
+  h1: {fontSize:'20px', fontWeight:700, color:'#1b3a28', letterSpacing:'-0.01em'},
+  sub: {fontSize:'12px', color:'#6b7c70', marginTop:'3px'},
+  grid4: {display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'16px', marginBottom:'20px'},
+  card: {background:'#fff', borderRadius:'10px', border:'1px solid #e2ece5', padding:'18px 20px', boxShadow:'0 1px 4px rgba(27,58,40,0.05)'},
+  statIcon: {width:'36px', height:'36px', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'10px'},
+  statVal: {fontSize:'26px', fontWeight:800, color:'#1b3a28', lineHeight:1},
+  statLabel: {fontSize:'11px', color:'#7a8f80', marginTop:'4px'},
+  sectionCard: {background:'#fff', borderRadius:'10px', border:'1px solid #e2ece5', boxShadow:'0 1px 4px rgba(27,58,40,0.05)', marginBottom:'20px', overflow:'hidden'},
+  sectionHeader: {display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #eef3ef'},
+  sectionTitle: {fontSize:'14px', fontWeight:700, color:'#1b3a28'},
+  badge: {fontSize:'11px', padding:'3px 10px', borderRadius:'20px', fontWeight:600},
+  row: {display:'flex', alignItems:'center', gap:'14px', padding:'13px 20px', borderBottom:'1px solid #f2f7f3', textDecoration:'none'},
+  avatar: {width:'34px', height:'34px', borderRadius:'50%', background:'#e8f5ee', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:700, color:'#2d6a4f', flexShrink:0},
+}
 
-  const settings = await prisma.systemSettings.findFirst()
-  const totalTokens = users.reduce((sum, u) => sum + u.tokenUsage.reduce((s, t) => s + t.inputTokens + t.outputTokens, 0), 0)
+export default async function AdminPage() {
+  let users: any[] = []
+  let settings: any = null
+  let totalTokens = 0
+
+  try {
+    users = await prisma.user.findMany({
+      where: { role: 'customer' },
+      include: {
+        hearingData: { select: { completionRate: true } },
+        applicationStatus: { select: { stage: true, adopted: true, electronicFiled: true } },
+        tokenUsage: { select: { inputTokens: true, outputTokens: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    settings = await prisma.systemSettings.findFirst()
+    totalTokens = users.reduce((sum, u) => sum + u.tokenUsage.reduce((s: number, t: any) => s + t.inputTokens + t.outputTokens, 0), 0)
+  } catch {}
 
   const stats = {
     total: users.length,
     hearing: users.filter(u => (u.hearingData?.completionRate || 0) > 50).length,
     electronic: users.filter(u => u.applicationStatus?.electronicFiled).length,
     adopted: users.filter(u => u.applicationStatus?.adopted).length,
-    tokens: totalTokens,
   }
 
+  const statCards = [
+    { label:'登録顧客数', value:stats.total, bg:'#e8f5ee', iconColor:'#2d6a4f',
+      icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+    { label:'ヒアリング50%+', value:stats.hearing, bg:'#fef9e7', iconColor:'#b7791f',
+      icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
+    { label:'電子申請済み', value:stats.electronic, bg:'#e8f0fe', iconColor:'#3b5bdb',
+      icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg> },
+    { label:'採択済み', value:stats.adopted, bg:'#fde8f5', iconColor:'#9c27b0',
+      icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+  ]
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">管理者ダッシュボード</h1>
-        <p className="text-slate-500 text-sm mt-0.5">小規模事業者持続化補助金 第19回</p>
+    <div style={S.page}>
+      {/* Header */}
+      <div style={S.header}>
+        <h1 style={S.h1}>ダッシュボード</h1>
+        <p style={S.sub}>小規模事業者持続化補助金 第19回 — 顧客サポート管理</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: '登録顧客数', value: stats.total, icon: '👥', color: 'bg-primary-50 text-primary-700', border: 'border-primary-200' },
-          { label: 'ヒアリング50%+', value: stats.hearing, icon: '📝', color: 'bg-green-50 text-green-700', border: 'border-green-200' },
-          { label: '電子申請済み', value: stats.electronic, icon: '✅', color: 'bg-blue-50 text-blue-700', border: 'border-blue-200' },
-          { label: '採択済み', value: stats.adopted, icon: '🎉', color: 'bg-amber-50 text-amber-700', border: 'border-amber-200' },
-        ].map(stat => (
-          <div key={stat.label} className={`bg-white rounded-2xl border ${stat.border} p-4 shadow-sm`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className={`text-2xl font-bold ${stat.color.split(' ')[1]}`}>{stat.value}</span>
+      {/* Stat cards */}
+      <div style={S.grid4}>
+        {statCards.map(s => (
+          <div key={s.label} style={S.card}>
+            <div style={{...S.statIcon, background:s.bg}}>
+              <span style={{color:s.iconColor}}>{s.icon}</span>
             </div>
-            <p className="text-sm text-slate-600">{stat.label}</p>
+            <div style={S.statVal}>{s.value}</div>
+            <div style={S.statLabel}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Token overview */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-slate-800">🔢 トークン使用状況</h2>
-          <Link href="/admin/tokens" className="text-xs text-primary-600 font-medium hover:underline">詳細 →</Link>
+      {/* Token bar */}
+      <div style={{...S.sectionCard, marginBottom:'20px'}}>
+        <div style={S.sectionHeader}>
+          <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span style={S.sectionTitle}>AI トークン使用状況</span>
+          </div>
+          <Link href="/admin/tokens" style={{fontSize:'12px', color:'#2d6a4f', fontWeight:600, textDecoration:'none'}}>詳細を見る →</Link>
         </div>
-        <p className="text-3xl font-bold text-slate-800">{totalTokens.toLocaleString()}<span className="text-sm text-slate-500 font-normal ml-1">トークン使用済み</span></p>
-        <div className="mt-2 w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
-            style={{ width: `${Math.min((totalTokens / (settings?.globalTokenLimit || 1000000)) * 100, 100)}%` }}
-          />
+        <div style={{padding:'16px 20px'}}>
+          <div style={{display:'flex', alignItems:'flex-end', gap:'6px', marginBottom:'8px'}}>
+            <span style={{fontSize:'28px', fontWeight:800, color:'#1b3a28', lineHeight:1}}>{totalTokens.toLocaleString()}</span>
+            <span style={{fontSize:'12px', color:'#6b7c70', paddingBottom:'3px'}}>/ {(settings?.globalTokenLimit || 1000000).toLocaleString()} トークン</span>
+          </div>
+          <div style={{height:'6px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden'}}>
+            <div style={{height:'100%', borderRadius:'10px', background:'linear-gradient(90deg,#2d6a4f,#52b788)', width:`${Math.min((totalTokens/(settings?.globalTokenLimit||1000000))*100,100)}%`, transition:'width 0.6s'}}/>
+          </div>
+          <p style={{fontSize:'11px', color:'#9aab9f', marginTop:'5px'}}>グローバル上限の {((totalTokens/(settings?.globalTokenLimit||1000000))*100).toFixed(1)}% 使用中</p>
         </div>
-        <p className="text-xs text-slate-400 mt-1">グローバル上限: {(settings?.globalTokenLimit || 1000000).toLocaleString()}</p>
       </div>
 
       {/* Customer list */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">👥 顧客一覧</h2>
-          <Link href="/admin/users" className="text-xs bg-primary-500 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-primary-400 transition-colors">
-            + 新規追加
+      <div style={S.sectionCard}>
+        <div style={S.sectionHeader}>
+          <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span style={S.sectionTitle}>顧客一覧</span>
+            <span style={{...S.badge, background:'#e8f5ee', color:'#2d6a4f'}}>{users.length}件</span>
+          </div>
+          <Link href="/admin/users" style={{display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'12px', fontWeight:600, color:'#fff', background:'#2d6a4f', padding:'6px 14px', borderRadius:'7px', textDecoration:'none'}}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            新規追加
           </Link>
         </div>
-        <div className="divide-y divide-slate-100">
+        <div>
           {users.length === 0 && (
-            <div className="p-8 text-center text-slate-400">
-              <p className="text-3xl mb-2">👥</p>
-              <p>まだ顧客が登録されていません</p>
+            <div style={{padding:'48px 20px', textAlign:'center', color:'#9aab9f'}}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" style={{margin:'0 auto 10px', display:'block', opacity:0.4}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <p style={{fontSize:'13px'}}>まだ顧客が登録されていません</p>
             </div>
           )}
-          {users.map(user => {
+          {users.map((user, idx) => {
             const stage = user.applicationStatus?.stage || 'requirement_check'
-            const stageObj = STAGES.find(s => s.id === stage)
-            const tokens = user.tokenUsage.reduce((s, t) => s + t.inputTokens + t.outputTokens, 0)
+            const stageObj = STAGES.find((s: any) => s.id === stage)
+            const tokens = user.tokenUsage.reduce((s: number, t: any) => s + t.inputTokens + t.outputTokens, 0)
+            const rate = user.hearingData?.completionRate || 0
+            const isLast = idx === users.length - 1
 
             return (
-              <Link
-                key={user.id}
-                href={`/admin/customer/${user.id}`}
-                className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors"
-              >
-                <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-bold">
-                  {(user.companyName || user.username).slice(0, 1)}
+              <Link key={user.id} href={`/admin/customer/${user.id}`} style={{
+                ...S.row, borderBottom: isLast ? 'none' : '1px solid #f2f7f3',
+              }}>
+                <div style={S.avatar}>{(user.companyName || user.username).slice(0,1)}</div>
+                <div style={{flex:1, minWidth:0}}>
+                  <p style={{fontSize:'13px', fontWeight:600, color:'#1b3a28', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{user.companyName || user.username}</p>
+                  <p style={{fontSize:'11px', color:'#8fa38f', marginTop:'1px'}}>@{user.username}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 truncate">{user.companyName || user.username}</p>
-                  <p className="text-xs text-slate-500">{user.username}</p>
-                </div>
-                <div className="hidden sm:flex items-center gap-3">
-                  <div className="text-center">
-                    <p className="text-xs text-slate-400">記入率</p>
-                    <p className={`text-sm font-bold ${(user.hearingData?.completionRate || 0) >= 80 ? 'text-green-600' : 'text-amber-600'}`}>
-                      {user.hearingData?.completionRate || 0}%
-                    </p>
+                <div style={{display:'flex', alignItems:'center', gap:'20px', flexShrink:0}}>
+                  <div style={{textAlign:'center'}}>
+                    <p style={{fontSize:'10px', color:'#9aab9f', marginBottom:'2px'}}>記入率</p>
+                    <p style={{fontSize:'13px', fontWeight:700, color: rate>=80?'#2d6a4f':rate>=50?'#b7791f':'#9aab9f'}}>{rate}%</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs text-slate-400">トークン</p>
-                    <p className="text-sm font-medium text-slate-700">{tokens.toLocaleString()}</p>
+                  <div style={{textAlign:'center'}}>
+                    <p style={{fontSize:'10px', color:'#9aab9f', marginBottom:'2px'}}>トークン</p>
+                    <p style={{fontSize:'12px', fontWeight:600, color:'#4a5f4e'}}>{tokens.toLocaleString()}</p>
                   </div>
+                  <span style={{
+                    fontSize:'11px', padding:'3px 9px', borderRadius:'20px', fontWeight:600, flexShrink:0,
+                    background: user.applicationStatus?.adopted ? '#e8f5ee' : user.applicationStatus?.electronicFiled ? '#e8f0fe' : '#f4f7f4',
+                    color: user.applicationStatus?.adopted ? '#2d6a4f' : user.applicationStatus?.electronicFiled ? '#3b5bdb' : '#7a8f80',
+                  }}>
+                    {stageObj?.label?.slice(0,6) || '未設定'}
+                  </span>
                 </div>
-                <span className={`shrink-0 text-xs px-2 py-1 rounded-full font-medium ${
-                  user.applicationStatus?.adopted ? 'bg-green-100 text-green-700' :
-                  user.applicationStatus?.electronicFiled ? 'bg-blue-100 text-blue-700' :
-                  'bg-slate-100 text-slate-600'
-                }`}>
-                  {stageObj?.icon} {stageObj?.label.slice(0, 6)}
-                </span>
-                <span className="text-slate-300">›</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5d4c8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </Link>
             )
           })}
