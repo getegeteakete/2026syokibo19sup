@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   id: string
@@ -110,6 +111,7 @@ export default function ChatInterface({
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [tokenInfo, setTokenInfo] = useState<{ totalUsed: number; limit: number } | null>(null)
   const [initialLoading, setInitialLoading] = useState(true)
+  const [showHearingGuide, setShowHearingGuide] = useState(false)
 
   // 音声関連
   const [isRecording, setIsRecording] = useState(false)
@@ -120,6 +122,7 @@ export default function ChatInterface({
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const interimRef = useRef('')
 
+  const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -301,6 +304,10 @@ export default function ChatInterface({
         }
         setMessages(prev => [...prev, newMsg])
         if (data.usage) setTokenInfo(data.usage)
+        // ヒアリングへの誘導シグナル
+        if (data.redirectToHearing) {
+          setShowHearingGuide(true)
+        }
         // 自動読み上げONの場合
         if (autoSpeak && voiceSupport.tts) {
           setSpeakingMsgId(newMsg.id)
@@ -488,6 +495,50 @@ export default function ChatInterface({
                 {[0,1,2].map(i => (
                   <div key={i} style={{ width:'7px', height:'7px', borderRadius:'50%', background:'#c0d4c8', animation:`bounce 1s ${i*0.2}s infinite` }}/>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ヒアリング誘導バナー */}
+        {showHearingGuide && (
+          <div style={{
+            margin:'4px 0 8px', padding:'14px 16px', borderRadius:'14px',
+            background:'linear-gradient(135deg, #1b3a28 0%, #2d6a4f 100%)',
+            boxShadow:'0 4px 16px rgba(45,106,79,0.3)',
+          }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:'10px' }}>
+              <div style={{ width:'36px', height:'36px', background:'rgba(255,255,255,0.15)', borderRadius:'10px', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#74c69d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div style={{ flex:1 }}>
+                <p style={{ fontSize:'13px', fontWeight:700, color:'#eaf6ee', margin:'0 0 4px' }}>
+                  ヒアリング（AIインタビュー）を始めましょう！
+                </p>
+                <p style={{ fontSize:'11px', color:'rgba(255,255,255,0.65)', margin:'0 0 10px', lineHeight:1.6 }}>
+                  AIが一問一答で申請に必要な情報をお聞きします。<br/>
+                  すでに登録済みの情報はスキップして進みます。
+                </p>
+                <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
+                  <button
+                    onClick={() => router.push('/dashboard/hearing')}
+                    style={{
+                      display:'flex', alignItems:'center', gap:'6px', padding:'8px 18px',
+                      background:'#52b788', border:'none', borderRadius:'8px', cursor:'pointer',
+                      fontSize:'13px', fontWeight:700, color:'#fff', fontFamily:"'Noto Sans JP',sans-serif",
+                      boxShadow:'0 2px 8px rgba(0,0,0,0.2)',
+                    }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    ヒアリングを開始する
+                  </button>
+                  <button
+                    onClick={() => setShowHearingGuide(false)}
+                    style={{ padding:'8px 14px', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'8px', cursor:'pointer', fontSize:'12px', color:'rgba(255,255,255,0.6)', fontFamily:"'Noto Sans JP',sans-serif" }}>
+                    後で
+                  </button>
+                </div>
               </div>
             </div>
           </div>

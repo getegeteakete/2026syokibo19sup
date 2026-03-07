@@ -61,12 +61,16 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = CHAT_SYSTEM_PROMPTS[section] || CHAT_SYSTEM_PROMPTS.general
 
-    // Add hearing data context if available
+    // Add hearing data context if available (general も含めて全セクション)
     let contextAddition = ''
-    if (section === 'document' || section === 'hearing') {
-      const hearing = await prisma.hearingData.findUnique({ where: { userId: session.id } })
-      if (hearing) {
-        contextAddition = `\n\n【現在収集済みのヒアリングデータ】\n${JSON.stringify(hearing, null, 2)}`
+    const hearing = await prisma.hearingData.findUnique({ where: { userId: session.id } })
+    if (hearing) {
+      const filledFields = Object.entries(hearing)
+        .filter(([k, v]) => !['id','userId','createdAt','updatedAt','completionRate','applicationDraft'].includes(k) && v && String(v).trim())
+        .map(([k, v]) => `  ${k}: ${v}`)
+        .join('\n')
+      if (filledFields) {
+        contextAddition = `\n\n【この顧客の収集済みプロフィール情報】\n${filledFields}\n（上記は既に把握済みの情報です。ヒアリングに誘導する際はこれらは再度聞く必要がありません）`
       }
     }
 
@@ -114,8 +118,13 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // [REDIRECT_TO_HEARING] シグナル検知
+    const hasRedirect = assistantContent.includes('[REDIRECT_TO_HEARING]')
+    const cleanMessage = assistantContent.replace(/\[REDIRECT_TO_HEARING\]/g, '').trim()
+
     return NextResponse.json({
-      message: assistantContent,
+      message: cleanMessage,
+      redirectToHearing: hasRedirect,
       usage: { inputTokens, outputTokens, totalUsed: totalUsed + inputTokens + outputTokens, limit },
     })
   } catch (error) {
