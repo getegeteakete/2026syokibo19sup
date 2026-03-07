@@ -118,11 +118,11 @@ export async function POST(request: NextRequest) {
     if (!hearingData) return NextResponse.json({ error: 'ヒアリングデータがありません。先にヒアリングを完了してください。' }, { status: 400 })
 
     const client = new Anthropic()
-    const data = { ...hearingData } as Record<string, string>
-    delete data.id
-    delete data.userId
-    delete data.createdAt
-    delete data.updatedAt
+    // Date型などをstring変換してRecord<string,string>に整形
+    const { id: _id, userId: _uid, createdAt: _ca, updatedAt: _ua, ...rest } = hearingData
+    const data: Record<string, string> = Object.fromEntries(
+      Object.entries(rest).map(([k, v]) => [k, v == null ? '' : String(v)])
+    )
 
     const prompt = type === 'form2'
       ? buildForm2Prompt(data, industry || '')
