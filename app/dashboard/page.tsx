@@ -12,16 +12,13 @@ export default async function DashboardPage() {
   let tokenLimit = 50000
 
   try {
-    user = await prisma.user.findUnique({
-      where: { id: session.id },
-      include: { hearingData: true, applicationStatus: true }
-    })
-    const settings = await prisma.systemSettings.findFirst()
+    const [u, settings, agg] = await Promise.all([
+      prisma.user.findUnique({ where: { id: session.id }, include: { hearingData: true, applicationStatus: true } }),
+      prisma.systemSettings.findFirst(),
+      prisma.tokenUsage.aggregate({ where: { userId: session.id }, _sum: { inputTokens: true, outputTokens: true } }),
+    ])
+    user = u
     tokenLimit = settings?.perUserTokenLimit || 50000
-    const agg = await prisma.tokenUsage.aggregate({
-      where: { userId: session.id },
-      _sum: { inputTokens: true, outputTokens: true }
-    })
     totalTokens = (agg._sum.inputTokens || 0) + (agg._sum.outputTokens || 0)
   } catch (_) {}
 
@@ -33,86 +30,78 @@ export default async function DashboardPage() {
   const daysToDeadline = Math.ceil((SCHEDULE.applicationDeadline.getTime() - now.getTime()) / 86400000)
   const daysToShokoukai = Math.ceil((SCHEDULE.shokoukaideadline.getTime() - now.getTime()) / 86400000)
 
-  const cardStyle = { background:'#fff', borderRadius:'10px', border:'1px solid #e2ece5', boxShadow:'0 1px 4px rgba(27,58,40,0.05)' }
-
-  const QUICK_ACTIONS = [
-    { href:'/dashboard/chat', label:'AIに質問', desc:'何でも聞いてください', bg:'#e8f5ee', iconColor:'#2d6a4f',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
-    { href:'/dashboard/hearing', label:`ヒアリング ${completionRate}%`, desc:'事業情報を入力', bg:'#fef9e7', iconColor:'#b7791f',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
-    { href:'/dashboard/documents', label:'必要書類', desc:'チェックリスト確認', bg:'#e8f0fe', iconColor:'#3b5bdb',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> },
-    { href:'/dashboard/simulation', label:'申請シミュレーション', desc:'電子申請を練習', bg:'#f3e8ff', iconColor:'#7c3aed',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
-    { href:'/dashboard/smart-schedule', label:'スケジュール', desc:'逆算タスク管理', bg:'#fff0f3', iconColor:'#be185d',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-    { href:'/dashboard/reports', label:'実績報告', desc:'採択後の手続き', bg:'#fef3c7', iconColor:'#92400e',
-      icon:<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+  const MENU = [
+    { href:'/dashboard/chat',           label:'AIチャット',       sub:'補助金について何でも相談', num:'01' },
+    { href:'/dashboard/hearing',        label:`ヒアリング`,        sub:`事業情報の入力 — ${completionRate}% 完了`, num:'02' },
+    { href:'/dashboard/documents',      label:'必要書類',          sub:'提出書類チェックリスト', num:'03' },
+    { href:'/dashboard/simulation',     label:'申請シミュレーション', sub:'電子申請の事前練習', num:'04' },
+    { href:'/dashboard/smart-schedule', label:'スケジュール',      sub:'逆算タスク・期日管理', num:'05' },
+    { href:'/dashboard/reports',        label:'実績報告',          sub:'採択後の手続き', num:'06' },
   ]
 
   return (
-    <div style={{ padding:'28px 32px', fontFamily:"'Noto Sans JP',sans-serif", maxWidth:'900px' }}>
+    <div style={{ padding:'32px 36px 48px', fontFamily:"'Noto Sans JP',sans-serif", maxWidth:'860px' }}>
+
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'24px' }}>
-        <div>
-          <h1 style={{ fontSize:'20px', fontWeight:700, color:'#1b3a28', letterSpacing:'-0.01em', margin:0 }}>
-            こんにちは、{user?.companyName || session.username}さん
-          </h1>
-          <p style={{ fontSize:'12px', color:'#6b7c70', marginTop:'4px' }}>
-            申請締切まで
-            <span style={{ fontWeight:700, color: daysToDeadline < 14 ? '#c0392b' : '#2d6a4f', margin:'0 3px' }}>{daysToDeadline}日</span>
-            です
-          </p>
-        </div>
-        <div style={{ textAlign:'right' }}>
-          <div style={{ fontSize:'10px', color:'#9aab9f', marginBottom:'2px' }}>現在のステージ</div>
-          <div style={{ fontSize:'12px', fontWeight:700, color:'#2d6a4f' }}>{(STAGES as any)[stageIndex]?.label || '―'}</div>
-        </div>
+      <div style={{ marginBottom:'36px', paddingBottom:'24px', borderBottom:'1px solid #e4ece7' }}>
+        <p style={{ fontSize:'10px', letterSpacing:'0.14em', color:'#8fa38f', textTransform:'uppercase', margin:'0 0 8px', fontWeight:600 }}>
+          小規模事業者持続化補助金 第19回
+        </p>
+        <h1 style={{ fontSize:'22px', fontWeight:800, color:'#162d1f', margin:'0 0 6px', letterSpacing:'-0.02em' }}>
+          {user?.companyName || session.username}
+        </h1>
+        <p style={{ fontSize:'12px', color:'#8fa38f', margin:0 }}>
+          申請締切まで
+          <span style={{ fontWeight:800, color: daysToDeadline < 14 ? '#c0392b' : '#2d6a4f', margin:'0 4px', fontSize:'14px' }}>
+            {daysToDeadline}
+          </span>
+          日
+        </p>
       </div>
 
-      {/* Deadline cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px', marginBottom:'20px' }}>
+      {/* Deadline strip */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'36px' }}>
         {[
-          { label:'電子申請締切', days: daysToDeadline, date:'2026年4月30日 17:00', urgent: daysToDeadline < 14 },
-          { label:'様式4（商工会議所）締切', days: daysToShokoukai, date:'2026年4月16日', urgent: daysToShokoukai < 14 },
+          { label:'電子申請締切', days: daysToDeadline, date:'2026年4月30日', urgent: daysToDeadline < 14 },
+          { label:'様式4（商工会議所）', days: daysToShokoukai, date:'2026年4月16日', urgent: daysToShokoukai < 14 },
         ].map(d => (
-          <div key={d.label} style={{ ...cardStyle, padding:'16px 20px', borderLeft:`3px solid ${d.urgent ? '#e74c3c' : '#2d6a4f'}` }}>
-            <div style={{ fontSize:'11px', color:'#7a8f80', marginBottom:'4px' }}>{d.label}</div>
-            <div style={{ fontSize:'28px', fontWeight:800, color: d.urgent ? '#c0392b' : '#1b3a28', lineHeight:1 }}>
-              {d.days}<span style={{ fontSize:'13px', fontWeight:500, marginLeft:'3px', color:'#6b7c70' }}>日</span>
+          <div key={d.label} style={{
+            padding:'16px 20px',
+            borderTop:`2px solid ${d.urgent ? '#c0392b' : '#2d6a4f'}`,
+            background:'#fff',
+          }}>
+            <div style={{ fontSize:'10px', color:'#8fa38f', letterSpacing:'0.08em', marginBottom:'8px' }}>{d.label}</div>
+            <div style={{ fontSize:'30px', fontWeight:800, color: d.urgent ? '#c0392b' : '#162d1f', lineHeight:1, letterSpacing:'-0.03em' }}>
+              {d.days}<span style={{ fontSize:'12px', fontWeight:500, color:'#8fa38f', marginLeft:'4px' }}>日</span>
             </div>
-            <div style={{ fontSize:'11px', color:'#9aab9f', marginTop:'3px' }}>{d.date}</div>
+            <div style={{ fontSize:'10px', color:'#b0bfb5', marginTop:'4px' }}>{d.date}</div>
           </div>
         ))}
       </div>
 
       {/* Progress */}
-      <div style={{ ...cardStyle, padding:'18px 20px', marginBottom:'20px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'12px' }}>
-          <span style={{ fontSize:'13px', fontWeight:700, color:'#1b3a28' }}>申請進捗</span>
-          <span style={{ fontSize:'11px', color:'#7a8f80' }}>ステップ {stageIndex + 1} / {STAGES.length}</span>
+      <div style={{ marginBottom:'36px' }}>
+        <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', marginBottom:'12px' }}>
+          <span style={{ fontSize:'10px', fontWeight:700, color:'#8fa38f', letterSpacing:'0.1em', textTransform:'uppercase' }}>申請進捗</span>
+          <span style={{ fontSize:'10px', color:'#b0bfb5' }}>STEP {stageIndex + 1} / {STAGES.length}</span>
         </div>
-        {/* Progress bar */}
-        <div style={{ height:'6px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden', marginBottom:'12px' }}>
-          <div style={{ height:'100%', background:'linear-gradient(90deg,#2d6a4f,#52b788)', borderRadius:'10px', width:`${((stageIndex+1)/STAGES.length)*100}%`, transition:'width 0.6s' }}/>
+        <div style={{ height:'2px', background:'#eef3ef', marginBottom:'16px' }}>
+          <div style={{ height:'100%', background:'#2d6a4f', width:`${((stageIndex+1)/STAGES.length)*100}%`, transition:'width 0.6s' }}/>
         </div>
-        {/* Stage dots */}
-        <div style={{ display:'flex', gap:'4px', overflowX:'auto', paddingBottom:'4px' }}>
+        <div style={{ display:'flex', gap:'0', overflowX:'auto' }}>
           {(STAGES as any[]).map((s, i) => (
-            <div key={s.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'4px', flexShrink:0 }}>
+            <div key={s.id} style={{ flex:1, minWidth:'52px', textAlign:'center' }}>
               <div style={{
-                width:'28px', height:'28px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center',
-                fontSize:'11px', fontWeight:700, transition:'all 0.2s',
-                background: i < stageIndex ? '#52b788' : i === stageIndex ? '#2d6a4f' : '#f4f7f4',
-                color: i <= stageIndex ? '#fff' : '#9aab9f',
-                border: `2px solid ${i < stageIndex ? '#52b788' : i === stageIndex ? '#2d6a4f' : '#e2ece5'}`,
-                boxShadow: i === stageIndex ? '0 2px 8px rgba(45,106,79,0.3)' : 'none',
+                width:'24px', height:'24px', borderRadius:'50%', margin:'0 auto 5px',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize:'10px', fontWeight:700,
+                background: i < stageIndex ? '#2d6a4f' : i === stageIndex ? '#162d1f' : '#eef3ef',
+                color: i <= stageIndex ? '#fff' : '#c5d4c8',
+                border: i === stageIndex ? '2px solid #162d1f' : '2px solid transparent',
               }}>
-                {i < stageIndex ? (
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                ) : (i + 1)}
+                {i < stageIndex ? '✓' : i + 1}
               </div>
-              <span style={{ fontSize:'9px', color: i === stageIndex ? '#2d6a4f' : '#9aab9f', maxWidth:'40px', textAlign:'center', lineHeight:1.2, fontWeight: i === stageIndex ? 600 : 400 }}>
+              <span style={{ fontSize:'8px', color: i === stageIndex ? '#162d1f' : '#c5d4c8', fontWeight: i === stageIndex ? 700 : 400, lineHeight:1.2, display:'block' }}>
                 {s.label.slice(0, 5)}
               </span>
             </div>
@@ -120,58 +109,65 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'12px', marginBottom:'20px' }}>
-        {QUICK_ACTIONS.map(item => (
-          <Link key={item.href} href={item.href} style={{
-            ...cardStyle, padding:'16px', textDecoration:'none', display:'block', transition:'all 0.15s',
-          }}
-          className="dash-quick-action">
-            <div style={{ width:'36px', height:'36px', background:item.bg, borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'10px', color:item.iconColor }}>
-              {item.icon}
-            </div>
-            <div style={{ fontSize:'13px', fontWeight:700, color:'#1b3a28', marginBottom:'2px' }}>{item.label}</div>
-            <div style={{ fontSize:'11px', color:'#8fa38f' }}>{item.desc}</div>
-          </Link>
-        ))}
+      {/* Menu grid */}
+      <div style={{ marginBottom:'36px' }}>
+        <div style={{ fontSize:'10px', fontWeight:700, color:'#8fa38f', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'14px' }}>
+          メニュー
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1px', background:'#e4ece7' }}>
+          {MENU.map(item => (
+            <Link key={item.href} href={item.href} style={{ textDecoration:'none', display:'block', background:'#fff', padding:'20px 22px', transition:'background 0.1s' }}
+              className="dash-menu-cell">
+              <div style={{ fontSize:'9px', color:'#b0bfb5', letterSpacing:'0.1em', marginBottom:'7px', fontWeight:600 }}>
+                {item.num}
+              </div>
+              <div style={{ fontSize:'13px', fontWeight:700, color:'#162d1f', letterSpacing:'-0.01em', marginBottom:'4px' }}>
+                {item.label}
+              </div>
+              <div style={{ fontSize:'11px', color:'#8fa38f' }}>
+                {item.sub}
+              </div>
+            </Link>
+          ))}
+        </div>
+        <style>{`.dash-menu-cell:hover { background: #f6fbf7 !important; }`}</style>
       </div>
 
-      {/* Token + Schedule row */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px' }}>
+      {/* Bottom row: token + schedule */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
         {/* Token */}
-        <div style={{ ...cardStyle, padding:'16px 20px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <span style={{ fontSize:'13px', fontWeight:700, color:'#1b3a28' }}>AI 利用量</span>
+        <div style={{ background:'#fff', padding:'20px 22px', borderTop:'2px solid #e4ece7' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#8fa38f', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'12px' }}>
+            AI利用量
           </div>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'5px' }}>
-            <span style={{ fontSize:'12px', color:'#6b7c70' }}>{totalTokens.toLocaleString()}</span>
-            <span style={{ fontSize:'12px', color:'#9aab9f' }}>{tokenLimit.toLocaleString()}</span>
+          <div style={{ fontSize:'22px', fontWeight:800, color:'#162d1f', letterSpacing:'-0.02em', lineHeight:1, marginBottom:'4px' }}>
+            {totalTokens.toLocaleString()}
+            <span style={{ fontSize:'10px', fontWeight:400, color:'#b0bfb5', marginLeft:'4px' }}>/ {tokenLimit.toLocaleString()}</span>
           </div>
-          <div style={{ height:'5px', background:'#eef3ef', borderRadius:'10px', overflow:'hidden' }}>
-            <div style={{ height:'100%', borderRadius:'10px', background: tokenPct>80?'#e74c3c':tokenPct>50?'#f39c12':'#52b788', width:`${tokenPct}%` }}/>
+          <div style={{ height:'2px', background:'#eef3ef', margin:'10px 0 6px' }}>
+            <div style={{ height:'100%', background: tokenPct>80?'#c0392b':tokenPct>50?'#e67e22':'#2d6a4f', width:`${tokenPct}%` }}/>
           </div>
-          <div style={{ fontSize:'11px', color:'#9aab9f', marginTop:'5px' }}>残り {(tokenLimit-totalTokens).toLocaleString()} トークン</div>
+          <div style={{ fontSize:'10px', color:'#b0bfb5' }}>残り {(tokenLimit-totalTokens).toLocaleString()} トークン</div>
         </div>
 
         {/* Schedule */}
-        <div style={{ ...cardStyle, padding:'16px 20px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span style={{ fontSize:'13px', fontWeight:700, color:'#1b3a28' }}>重要日程</span>
+        <div style={{ background:'#fff', padding:'20px 22px', borderTop:'2px solid #e4ece7' }}>
+          <div style={{ fontSize:'10px', fontWeight:700, color:'#8fa38f', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:'12px' }}>
+            重要日程
           </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
             {[
               { label:'様式4 締切', date:'4/16', done: now > SCHEDULE.shokoukaideadline, urgent: daysToShokoukai <= 14 },
               { label:'電子申請 締切', date:'4/30', done: now > SCHEDULE.applicationDeadline, urgent: daysToDeadline <= 14 },
               { label:'採択発表', date:'7月頃', done: false, urgent: false },
             ].map(item => (
-              <div key={item.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 8px', borderRadius:'6px', background: item.done ? '#f0faf4' : item.urgent ? '#fff8f0' : '#f6fbf7' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
-                  <div style={{ width:'6px', height:'6px', borderRadius:'50%', background: item.done ? '#52b788' : item.urgent ? '#f39c12' : '#9aab9f' }}/>
-                  <span style={{ fontSize:'12px', color: item.done ? '#52b788' : '#1b3a28', textDecoration: item.done ? 'line-through' : 'none' }}>{item.label}</span>
-                </div>
-                <span style={{ fontSize:'11px', color:'#9aab9f', fontWeight:600 }}>{item.date}</span>
+              <div key={item.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid #f0f5f2' }}>
+                <span style={{ fontSize:'11px', color: item.done ? '#b0bfb5' : '#3a5245', textDecoration: item.done ? 'line-through' : 'none', fontWeight: item.urgent ? 700 : 400 }}>
+                  {item.label}
+                </span>
+                <span style={{ fontSize:'11px', fontWeight:700, color: item.done ? '#b0bfb5' : item.urgent ? '#c0392b' : '#8fa38f' }}>
+                  {item.date}
+                </span>
               </div>
             ))}
           </div>
